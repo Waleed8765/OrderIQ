@@ -90,7 +90,7 @@ const LiveOrders = () => {
 
     if (restaurant?.id) {
       // Connect to websocket
-      const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000';
+      const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5002';
       socketRef.current = io(socketUrl);
 
       socketRef.current.on('connect', () => {
