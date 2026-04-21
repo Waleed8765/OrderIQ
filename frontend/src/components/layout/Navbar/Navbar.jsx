@@ -117,6 +117,12 @@ const Navbar = () => {
     setIsForgotOpen(true);
   };
 
+  useEffect(() => {
+    const handleOpenLoginEvent = () => handleOpenLogin();
+    window.addEventListener('open-login', handleOpenLoginEvent);
+    return () => window.removeEventListener('open-login', handleOpenLoginEvent);
+  }, []);
+
   // Hide this navbar on restaurant and admin dashboard pages
   if (location.pathname.startsWith('/restaurant') || location.pathname.startsWith('/admin')) {
     return null;

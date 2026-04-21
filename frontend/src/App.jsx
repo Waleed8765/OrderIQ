@@ -10,6 +10,7 @@ import { CartProvider } from "./features/customer/CartContext";
 import { FavoritesProvider } from "./features/customer/FavoritesContext";
 import ProtectedAdminRoute from "./components/auth/ProtectedAdminRoute";
 import ProtectedRestaurantRoute from "./components/auth/ProtectedRestaurantRoute";
+import GlobalAuthModals from "./components/auth/GlobalAuthModals";
 
 // Lazy Imports
 const LandingPage = lazy(() => import("./pages/LandingPage/LandingPage"));
@@ -149,6 +150,7 @@ function App() {
         </Route>
       </Routes>
       </Suspense>
+      <GlobalAuthModals />
       <ChatAssistant />
       <Toaster
         position="top-center"

@@ -12,6 +12,16 @@ export const restaurantService = {
         return response.data;
     },
 
+    getReviews: async (id) => {
+        const response = await api.get(`/restaurants/${id}/reviews`);
+        return response.data;
+    },
+
+    addReview: async (id, reviewData) => {
+        const response = await api.post(`/restaurants/${id}/reviews`, reviewData);
+        return response.data;
+    },
+
     // Protected routes (require RESTAURANT_OWNER or ADMIN role)
     createRestaurant: async (restaurantData) => {
         const response = await api.post('/restaurants', restaurantData);

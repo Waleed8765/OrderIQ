@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../auth/AuthContext';
 
 const CartContext = createContext();
 
@@ -8,32 +9,50 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }) => {
-    const [cartItems, setCartItems] = useState(() => {
-        // Try to load from local storage
-        const saved = localStorage.getItem('orderiq_cart');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const { user } = useAuth();
+    const userId = user?.uid || 'guest';
 
-    const [restaurant, setRestaurant] = useState(() => {
-        const saved = localStorage.getItem('orderiq_cart_restaurant');
-        return saved ? JSON.parse(saved) : null;
-    });
+    const [cartItems, setCartItems] = useState([]);
+    const [restaurant, setRestaurant] = useState(null);
+    const [orderType, setOrderType] = useState('DELIVERY');
+    const [tableLabel, setTableLabel] = useState('');
+    const [isLoaded, setIsLoaded] = useState(false);
 
-    // Dine-in / QR code state
-    const [orderType, setOrderType] = useState(() => {
-        return localStorage.getItem('orderiq_order_type') || 'DELIVERY';
-    });
-
-    const [tableLabel, setTableLabel] = useState(() => {
-        return localStorage.getItem('orderiq_table_label') || '';
-    });
-
+    // Effect to load cart whenever user changes
     useEffect(() => {
-        localStorage.setItem('orderiq_cart', JSON.stringify(cartItems));
-        localStorage.setItem('orderiq_cart_restaurant', JSON.stringify(restaurant));
-        localStorage.setItem('orderiq_order_type', orderType);
-        localStorage.setItem('orderiq_table_label', tableLabel);
-    }, [cartItems, restaurant, orderType, tableLabel]);
+        const cartKey = `orderiq_cart_${userId}`;
+        const resKey = `orderiq_cart_restaurant_${userId}`;
+        const typeKey = `orderiq_order_type_${userId}`;
+        const tableKey = `orderiq_table_label_${userId}`;
+
+        const savedCart = localStorage.getItem(cartKey);
+        const savedRes = localStorage.getItem(resKey);
+        const savedType = localStorage.getItem(typeKey);
+        const savedTable = localStorage.getItem(tableKey);
+
+        setCartItems(savedCart ? JSON.parse(savedCart) : []);
+        setRestaurant(savedRes ? JSON.parse(savedRes) : null);
+        setOrderType(savedType || 'DELIVERY');
+        setTableLabel(savedTable || '');
+        setIsLoaded(true);
+        
+        console.log(`[CartContext] Loaded cart for: ${userId}`);
+    }, [userId]);
+
+    // Effect to save cart whenever it changes
+    useEffect(() => {
+        if (!isLoaded) return;
+
+        const cartKey = `orderiq_cart_${userId}`;
+        const resKey = `orderiq_cart_restaurant_${userId}`;
+        const typeKey = `orderiq_order_type_${userId}`;
+        const tableKey = `orderiq_table_label_${userId}`;
+
+        localStorage.setItem(cartKey, JSON.stringify(cartItems));
+        localStorage.setItem(resKey, JSON.stringify(restaurant));
+        localStorage.setItem(typeKey, orderType);
+        localStorage.setItem(tableKey, tableLabel);
+    }, [cartItems, restaurant, orderType, tableLabel, userId, isLoaded]);
 
     const addToCart = (item, currentRestaurant) => {
         // Check if adding explicitly from a different restaurant
@@ -51,9 +70,10 @@ export const CartProvider = ({ children }) => {
             if (existing) {
                 return prev.map(i => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i);
             }
-            toast.success(`Added ${item.name} to cart`);
             return [...prev, { ...item, quantity: 1 }];
         });
+        
+        toast.success(`Added ${item.name} to cart`);
     };
 
     const removeFromCart = (itemId) => {

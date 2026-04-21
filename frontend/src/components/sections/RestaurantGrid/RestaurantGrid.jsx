@@ -255,7 +255,7 @@ const RestaurantGrid = () => {
                       {/* Rating */}
                       <div className="flex items-center bg-green-50 px-2 py-1 rounded-lg">
                         <Star className="w-4 h-4 text-green-600 fill-current" />
-                        <span className="ml-1 font-bold text-green-700">{restaurant.rating}</span>
+                        <span className="ml-1 font-bold text-green-700">{restaurant.rating ? Number(restaurant.rating).toFixed(1) : 'New'}</span>
                         <span className="ml-1 text-xs text-neutral-500">({restaurant.reviewCount})</span>
                       </div>
                     </div>

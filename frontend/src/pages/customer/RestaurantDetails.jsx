@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { Star, Clock, Info, Search, ChevronLeft, Minus, Plus, Heart } from 'lucide-react';
 import cartBG from "../../assets/cartBG.png";
 import DishCard from '../../components/customer/DishCard';
+import ReviewSection from '../../components/customer/ReviewSection';
 import { restaurantService } from '../../services/restaurant.service';
 import { menuService } from '../../services/menu.service';
 import { useCart } from '../../features/customer/CartContext';
@@ -23,6 +24,15 @@ const RestaurantDetails = () => {
     const { isFavorite, toggleFavorite } = useFavorites();
     const { isAuthenticated } = useAuth();
     const favorited = isAuthenticated && isFavorite(id);
+
+    const handleRatingUpdate = (newAverage, newCount) => {
+        setRestaurant(prev => ({
+            ...prev,
+            rating: newAverage,
+            averageRating: newAverage,
+            reviewCount: newCount
+        }));
+    };
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -125,8 +135,8 @@ const RestaurantDetails = () => {
                     )}
                     <div className="flex items-center gap-2">
                         <Star className="w-5 h-5 text-green-600 fill-current" />
-                        <span className="font-bold text-neutral-900">{restaurant.averageRating || 4.5}</span>
-                        <span className="text-neutral-500">({restaurant.reviewCount || 100}+ ratings)</span>
+                        <span className="font-bold text-neutral-900">{restaurant.rating ? Number(restaurant.rating).toFixed(1) : 'New'}</span>
+                        <span className="text-neutral-500">({restaurant.reviewCount || 0} reviews)</span>
                     </div>
                     <div className="flex items-center gap-2 text-neutral-600">
                         <Clock className="w-5 h-5" />
@@ -254,6 +264,11 @@ const RestaurantDetails = () => {
                             )}
                         </div>
                     </div>
+                </div>
+
+                {/* Rating & Review Section */}
+                <div className="mt-12">
+                    <ReviewSection restaurantId={restaurant.id} onRatingUpdate={handleRatingUpdate} />
                 </div>
 
             </div>
