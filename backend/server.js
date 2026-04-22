@@ -59,6 +59,7 @@ const userRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 const paymentRoutes = require('./routes/payments');
+const recommendationRoutes = require('./routes/recommendations');
 
 // RAG Module (AI Chat Assistant)
 const rag = require('./rag');
@@ -71,6 +72,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/chat', rag.routes);
 
 
