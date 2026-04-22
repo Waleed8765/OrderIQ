@@ -124,7 +124,7 @@ exports.createRestaurant = async (req, res) => {
         });
 
         // Sync RAG embedding (non-blocking)
-        ragSync.syncRestaurantEmbedding(restaurant.id).catch(() => { });
+        ragSync.syncRestaurantEmbedding(restaurant.id).catch(e => console.error('[RAG Sync] Failed to embed restaurant:', e.message));
 
         res.status(201).json({ success: true, data: restaurant });
     } catch (error) {
@@ -178,7 +178,7 @@ exports.updateRestaurant = async (req, res) => {
         });
 
         // Sync RAG embedding (non-blocking)
-        ragSync.syncRestaurantEmbedding(restaurant.id).catch(() => { });
+        ragSync.syncRestaurantEmbedding(restaurant.id).catch(e => console.error('[RAG Sync] Failed to embed restaurant:', e.message));
 
         res.status(200).json({ success: true, data: restaurant });
     } catch (error) {

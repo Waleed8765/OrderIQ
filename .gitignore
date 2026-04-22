@@ -1,4 +1,3 @@
-# Claude AI context (local only — not for version control)
 context.md
 issue.md
 
@@ -27,3 +26,4 @@ Thumbs.db
 # Uploads
 backend/uploads/*
 !backend/uploads/.gitkeep
+.claude

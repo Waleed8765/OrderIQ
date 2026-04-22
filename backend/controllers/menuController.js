@@ -99,7 +99,7 @@ exports.createMenuItem = async (req, res) => {
         });
 
         // Sync RAG embedding (non-blocking)
-        ragSync.syncMenuItemEmbedding(item.id).catch(() => { });
+        ragSync.syncMenuItemEmbedding(item.id).catch(e => console.error('[RAG Sync] Failed to embed menu item:', e.message));
 
         res.status(201).json({ success: true, data: item });
     } catch (error) {
@@ -140,7 +140,7 @@ exports.updateMenuItem = async (req, res) => {
         });
 
         // Sync RAG embedding (non-blocking)
-        ragSync.syncMenuItemEmbedding(updated.id).catch(() => { });
+        ragSync.syncMenuItemEmbedding(updated.id).catch(e => console.error('[RAG Sync] Failed to embed menu item:', e.message));
 
         res.status(200).json({ success: true, data: updated });
     } catch (error) {
