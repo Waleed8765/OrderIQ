@@ -65,6 +65,10 @@ const recommendationRoutes = require('./routes/recommendations');
 const rag = require('./rag');
 rag.initialize();
 
+// WhatsApp Bot Service
+const whatsappService = require('./services/whatsappService');
+whatsappService.initialize(io);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/orders', orderRoutes);
