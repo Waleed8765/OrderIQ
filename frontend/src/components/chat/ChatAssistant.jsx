@@ -31,6 +31,11 @@ export default function ChatAssistant() {
     if (isOpen) inputRef.current?.focus();
   }, [isOpen]);
 
+  // Restore focus after loading completes (runs after React commits disabled → enabled)
+  useEffect(() => {
+    if (!isLoading && isOpen) inputRef.current?.focus();
+  }, [isLoading, isOpen]);
+
   // Build conversation history for context (exclude the welcome message)
   function getConversationHistory() {
     return messages

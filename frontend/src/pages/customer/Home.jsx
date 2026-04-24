@@ -8,7 +8,7 @@ import { orderService } from '../../services/order.service';
 import {
   QrCode, Clock, Star, MapPin, ArrowRight,
   TrendingUp, Flame, Sparkles, ShoppingBag, Award,
-  ChevronRight, Package
+  ChevronRight, Package, Wand2
 } from 'lucide-react';
 import { checkIsClosed } from '../../utils/restaurantUtils';
 
@@ -22,6 +22,9 @@ const CustomerHome = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeOrder, setActiveOrder] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
+  const [recoScenario, setRecoScenario] = useState(null);
+  const [recoLoading, setRecoLoading] = useState(false);
 
   // Time-based greeting
   const hour = new Date().getHours();
@@ -34,6 +37,22 @@ const CustomerHome = () => {
     const fetchData = async () => {
       try {
         const { restaurantService } = await import('../../services/restaurant.service');
+
+        // Kick off recommendations in parallel before awaiting the main restaurant list
+        let recoPromise = null;
+        if (isLoggedIn && profile) {
+          setRecoLoading(true);
+          const city =
+            profile?.addresses?.find(a => a.isDefault)?.city ||
+            profile?.addresses?.[0]?.city ||
+            undefined;
+          recoPromise = import('../../services/recommendation.service')
+            .then(({ recommendationService }) =>
+              recommendationService.getRecommendations({ city, type: deliveryMode, limit: 8 })
+            )
+            .catch(() => null);
+        }
+
         const rData = await restaurantService.getAllRestaurants();
         setRestaurants(rData.data || rData);
 
@@ -65,9 +84,20 @@ const CustomerHome = () => {
               items: itemsSummary
             });
           }
+
+          // Resolve recommendations — runs in parallel with orders fetch above
+          if (recoPromise) {
+            const recoData = await recoPromise;
+            if (recoData?.data?.restaurants?.length > 0) {
+              setRecommendations(recoData.data.restaurants);
+              setRecoScenario(recoData.data.scenario);
+            }
+            setRecoLoading(false);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch data:", error);
+        setRecoLoading(false);
       } finally {
         setIsLoading(false);
       }
@@ -187,6 +217,42 @@ const CustomerHome = () => {
                 Add Address
               </button>
             </div>
+          </div>
+        )}
+
+        {/* Recommendation Rail — personalized, auth-gated, silent failure */}
+        {isLoggedIn && (recoLoading || recommendations.length > 0) && (
+          <div>
+            <div className="flex items-center space-x-3 mb-4">
+              <Wand2 className="w-6 h-6 text-primary-600" />
+              <h2 className="text-xl font-bold text-gray-900">Recommended for you</h2>
+            </div>
+
+            {recoLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className="bg-gray-100 rounded-xl h-48 animate-pulse" />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {recommendations.map(r => (
+                  <RestaurantCard
+                    key={r.id}
+                    restaurant={{
+                      ...r,
+                      cuisines: r.cuisineTypes || [],
+                      deliveryTime: `${Math.max(10, (r.prepTime || 25) - 5)}-${(r.prepTime || 25) + 5} min`,
+                      deliveryFee: r.deliveryFee > 0 ? `PKR ${r.deliveryFee} delivery fee` : 'Free delivery fee',
+                      priceRange: r.priceRange || '$$',
+                      image: r.coverImage || 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
+                      isClosed: checkIsClosed(r)
+                    }}
+                    mode={deliveryMode}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
