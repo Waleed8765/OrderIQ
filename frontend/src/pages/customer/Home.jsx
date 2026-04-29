@@ -138,12 +138,14 @@ const CustomerHome = () => {
 
   // Map backend restaurants to our frontend UI rails
 
+  const displayRestaurants = recommendations.length > 0 ? recommendations : restaurants;
+
   const restaurantRails = [
     {
-      id: 'all',
-      title: 'Restaurants near you',
+      id: 'recommended',
+      title: 'Recommended Restaurants',
       icon: Sparkles,
-      restaurants: restaurants.map(r => ({
+      restaurants: displayRestaurants.map(r => ({
         ...r,
         // Map backend names to frontend expected names
         cuisines: r.cuisineTypes || [],
@@ -220,41 +222,7 @@ const CustomerHome = () => {
           </div>
         )}
 
-        {/* Recommendation Rail — personalized, auth-gated, silent failure */}
-        {isLoggedIn && (recoLoading || recommendations.length > 0) && (
-          <div>
-            <div className="flex items-center space-x-3 mb-4">
-              <Wand2 className="w-6 h-6 text-primary-600" />
-              <h2 className="text-xl font-bold text-gray-900">Recommended for you</h2>
-            </div>
-
-            {recoLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="bg-gray-100 rounded-xl h-48 animate-pulse" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {recommendations.map(r => (
-                  <RestaurantCard
-                    key={r.id}
-                    restaurant={{
-                      ...r,
-                      cuisines: r.cuisineTypes || [],
-                      deliveryTime: `${Math.max(10, (r.prepTime || 25) - 5)}-${(r.prepTime || 25) + 5} min`,
-                      deliveryFee: r.deliveryFee > 0 ? `PKR ${r.deliveryFee} delivery fee` : 'Free delivery fee',
-                      priceRange: r.priceRange || '$$',
-                      image: r.coverImage || 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
-                      isClosed: checkIsClosed(r)
-                    }}
-                    mode={deliveryMode}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        {/* Recommendation Rail Removed - Integrated below */}
 
         {/* Active Order Tracking Card */}
         {activeOrder && (
