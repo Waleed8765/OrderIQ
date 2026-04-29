@@ -27,3 +27,9 @@ Thumbs.db
 backend/uploads/*
 !backend/uploads/.gitkeep
 .claude
+
+# WhatsApp Bot
+backend/.wwebjs_auth
+backend/.wwebjs_cache
+.wwebjs_auth
+.wwebjs_cache
