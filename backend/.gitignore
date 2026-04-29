@@ -26,3 +26,7 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# WhatsApp Bot
+.wwebjs_auth
+.wwebjs_cache
