@@ -96,6 +96,20 @@ exports.updateRestaurantStatus = async (req, res) => {
     }
 };
 
+exports.toggleRestaurantPromotion = async (req, res) => {
+    try {
+        const { promoted } = req.body;
+        const restaurant = await prisma.restaurant.update({
+            where: { id: req.params.id },
+            data: { promoted }
+        });
+        res.status(200).json({ success: true, data: restaurant });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server error toggling restaurant promotion' });
+    }
+};
+
 // @desc    Toggle user active/blocked status
 // @route   PATCH /api/admin/users/:id/status
 // @access  Private (ADMIN)

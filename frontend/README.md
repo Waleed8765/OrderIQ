@@ -23,8 +23,7 @@ npm install
 Create `.env` in this directory:
 
 ```env
-VITE_API_URL=http://localhost:5000/api
-VITE_SOCKET_URL=http://localhost:5000
+VITE_API_URL=http://localhost:5002/api
 
 VITE_FIREBASE_API_KEY=your-api-key
 VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
@@ -42,3 +41,4 @@ VITE_FIREBASE_APP_ID=your-app-id
 | `npm run build` | Build for production → `dist/` |
 | `npm run preview` | Preview production build locally |
 | `npm run lint` | Run ESLint |
+| `npm run test` | Run Vitest smoke tests |

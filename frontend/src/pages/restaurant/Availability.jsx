@@ -20,35 +20,50 @@ const Availability = () => {
   const [customPrep, setCustomPrep] = useState('');
 
   const [days, setDays] = useState([
-    { name: 'Monday', open: '11:00', close: '22:00', closed: false },
-    { name: 'Tuesday', open: '11:00', close: '22:00', closed: false },
-    { name: 'Wednesday', open: '11:00', close: '22:00', closed: false },
-    { name: 'Thursday', open: '11:00', close: '23:00', closed: false },
-    { name: 'Friday', open: '11:00', close: '23:00', closed: false },
-    { name: 'Saturday', open: '10:00', close: '23:00', closed: false },
-    { name: 'Sunday', open: '10:00', close: '21:00', closed: false },
+    { name: 'Monday', open: '', close: '', closed: false },
+    { name: 'Tuesday', open: '', close: '', closed: false },
+    { name: 'Wednesday', open: '', close: '', closed: false },
+    { name: 'Thursday', open: '', close: '', closed: false },
+    { name: 'Friday', open: '', close: '', closed: false },
+    { name: 'Saturday', open: '', close: '', closed: false },
+    { name: 'Sunday', open: '', close: '', closed: false },
   ]);
   const [closures, setClosures] = useState([]);
 
   useEffect(() => {
-    if (restaurant) {
+    if (restaurant && !saving) {
       setIsOpen(restaurant.status === 'OPEN');
       setEnabledModes({
         delivery: restaurant.delivery ?? true,
         pickup: restaurant.takeaway ?? true,
         dinein: restaurant.dineIn ?? true,
       });
-      if (restaurant.openingTime || restaurant.closingTime) {
+      
+      const openTime = restaurant.openingTime || '09:00';
+      const closeTime = restaurant.closingTime || '22:00';
+      
+      // Initialize days from schedule if it exists, otherwise use global hours
+      if (restaurant.schedule && typeof restaurant.schedule === 'object') {
         setDays(prev => prev.map(d => ({
           ...d,
-          open: restaurant.openingTime || d.open,
-          close: restaurant.closingTime || d.close
+          open: restaurant.schedule[d.name]?.open || openTime,
+          close: restaurant.schedule[d.name]?.close || closeTime,
+          closed: restaurant.schedule[d.name]?.closed ?? false
+        })));
+      } else {
+        setDays(prev => prev.map(d => ({
+          ...d,
+          open: openTime,
+          close: closeTime,
+          closed: false
         })));
       }
+      
+      if (restaurant.prepTime) {
+        setPrepTime(restaurant.prepTime);
+      }
     }
-  }, [restaurant]);
-
-
+  }, [restaurant, saving]);
 
   const toggleMode = (mode) => {
     setEnabledModes(prev => ({ ...prev, [mode]: !prev[mode] }));
@@ -68,6 +83,7 @@ const Availability = () => {
   };
 
   const handleDayTimeChange = (name, field, value) => {
+    // Individual day timing change
     setDays((prev) => prev.map((day) => (
       day.name === name ? { ...day, [field]: value } : day
     )));
@@ -98,16 +114,31 @@ const Availability = () => {
     if (!restaurant?.id) return;
     try {
       setSaving(true);
-      await restaurantService.updateRestaurant(restaurant.id, {
+      
+      // Construct schedule object for backend
+      const scheduleObj = {};
+      days.forEach(d => {
+        scheduleObj[d.name] = { open: d.open, close: d.close, closed: d.closed };
+      });
+
+      // Use the first non-closed day's hours for global fallback fields
+      const activeDay = days.find(d => !d.closed) || days[0];
+
+      const response = await restaurantService.updateRestaurant(restaurant.id, {
         status: isOpen ? 'OPEN' : 'PAUSED',
-        openingTime: days[0].open, // Save the first day's config as global format for Prisma
-        closingTime: days[0].close,
+        openingTime: activeDay.open,
+        closingTime: activeDay.close,
         delivery: enabledModes.delivery,
         takeaway: enabledModes.pickup,
-        dineIn: enabledModes.dinein
+        dineIn: enabledModes.dinein,
+        prepTime: prepTime,
+        schedule: scheduleObj
       });
-      toast.success('Availability settings saved!');
-      if (refetch) refetch();
+      
+      if (response?.success) {
+        toast.success('Availability settings saved!');
+        if (refetch) await refetch();
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to save settings');
     } finally {

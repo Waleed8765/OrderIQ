@@ -61,17 +61,17 @@ const CustomerLayout = ({ children }) => {
     const timeout = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await restaurantService.getAllRestaurants();
-        const allRestaurants = res.data || res || [];
-        const query = searchQuery.toLowerCase();
-        const filtered = allRestaurants.filter(r =>
-          r.name?.toLowerCase().includes(query) ||
-          r.cuisineTypes?.some(c => c.toLowerCase().includes(query)) ||
-          r.description?.toLowerCase().includes(query)
-        );
-        setSearchResults(filtered.slice(0, 6));
+        const res = await restaurantService.getAllRestaurants({
+          search: searchQuery.trim(),
+          limit: 24,
+          page: 1,
+          sort: 'rating',
+        });
+        const list = res.data || [];
+        setSearchResults(Array.isArray(list) ? list.slice(0, 8) : []);
       } catch (err) {
         console.error('Search failed:', err);
+        setSearchResults([]);
       } finally {
         setIsSearching(false);
       }
@@ -122,7 +122,7 @@ const CustomerLayout = ({ children }) => {
           <div className="h-20 flex items-center justify-between">
             {/* Left: Logo */}
             <div className="flex items-center space-x-8">
-              <Link to="/customer" className="flex items-center space-x-3">
+              <Link to="/" className="flex items-center space-x-3" aria-label="OrderIQ home">
                 <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
                   <span className="text-white font-bold text-lg">OQ</span>
                 </div>
@@ -233,7 +233,11 @@ const CustomerLayout = ({ children }) => {
               </div>
 
               {/* Dine-in CTA */}
-              <button className="hidden xl:flex items-center space-x-2 px-3 py-2 bg-accent-50 text-accent-600 rounded-lg hover:bg-accent-100">
+              <button
+                type="button"
+                onClick={() => navigate('/scan')}
+                className="hidden xl:flex items-center space-x-2 px-3 py-2 bg-accent-50 text-accent-600 rounded-lg hover:bg-accent-100"
+              >
                 <QrCode className="w-4 h-4 flex-shrink-0" />
                 <span className="font-medium whitespace-nowrap">QR for dine-in</span>
               </button>
@@ -461,12 +465,17 @@ const CustomerLayout = ({ children }) => {
             >
               <div className="p-6">
                 <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center space-x-3">
+                  <Link
+                    to="/"
+                    className="flex items-center space-x-3"
+                    aria-label="OrderIQ home"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
                     <div className="w-10 h-10 bg-gradient-to-r from-primary-500 to-accent-500 rounded-xl flex items-center justify-center">
                       <span className="text-white font-bold text-lg">OQ</span>
                     </div>
                     <span className="text-xl font-bold">OrderIQ</span>
-                  </div>
+                  </Link>
                   <button onClick={() => setMobileMenuOpen(false)}>
                     <X className="w-6 h-6" />
                   </button>
@@ -528,7 +537,14 @@ const CustomerLayout = ({ children }) => {
                 )}
 
                 {/* Dine-in CTA */}
-                <button className="w-full flex items-center justify-center space-x-2 py-3 bg-accent-50 text-accent-600 rounded-lg mb-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate('/scan');
+                  }}
+                  className="w-full flex items-center justify-center space-x-2 py-3 bg-accent-50 text-accent-600 rounded-lg mb-6"
+                >
                   <QrCode className="w-5 h-5" />
                   <span className="font-medium">Scan QR for dine-in</span>
                 </button>

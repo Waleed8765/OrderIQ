@@ -3,8 +3,10 @@ import { Search, X, Filter, Menu as MenuIcon, ShoppingBag } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LoginModal from "../../auth/LoginModal";
 import ForgotPasswordModal from "../../auth/ForgotPasswordModal";
+import { useAuth } from '../../../features/auth/AuthContext';
 
 const Navbar = () => {
+  const { isAuthenticated, isRestaurantOwner, isAdmin } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -116,6 +118,12 @@ const Navbar = () => {
     setIsLoginOpen(false);
     setIsForgotOpen(true);
   };
+
+  const loggedInAppLink = isAdmin
+    ? { to: '/admin', label: 'Admin' }
+    : isRestaurantOwner
+      ? { to: '/restaurant', label: 'Dashboard' }
+      : { to: '/customer', label: 'Go to app' };
 
   useEffect(() => {
     const handleOpenLoginEvent = () => handleOpenLogin();
@@ -265,30 +273,40 @@ const Navbar = () => {
                 )}
               </Link>
 
-              {/* Auth Buttons */}
+              {/* Auth / logged-in app entry */}
               <div className="hidden md:flex items-center space-x-4">
-                <Link
-                  to="/register/restaurant"
-                  className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition-colors"
-                >
-                  Partner with Us
-                </Link>
-
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={handleOpenLogin}
-                    className="px-5 py-2.5 text-sm font-bold text-gray-700 hover:text-purple-600 transition-colors"
-                  >
-                    Log in
-                  </button>
-                  {/* SIGN UP BUTTON - Explicit Colors */}
+                {isAuthenticated ? (
                   <Link
-                    to="/register"
+                    to={loggedInAppLink.to}
                     className="px-6 py-2.5 text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all duration-300"
                   >
-                    Sign up
+                    {loggedInAppLink.label}
                   </Link>
-                </div>
+                ) : (
+                  <>
+                    <Link
+                      to="/register/restaurant"
+                      className="text-sm font-semibold text-gray-600 hover:text-purple-600 transition-colors"
+                    >
+                      Partner with Us
+                    </Link>
+
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={handleOpenLogin}
+                        className="px-5 py-2.5 text-sm font-bold text-gray-700 hover:text-purple-600 transition-colors"
+                      >
+                        Log in
+                      </button>
+                      <Link
+                        to="/register"
+                        className="px-6 py-2.5 text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl shadow-lg shadow-purple-500/30 hover:shadow-purple-500/50 hover:scale-105 transition-all duration-300"
+                      >
+                        Sign up
+                      </Link>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* Mobile Menu Button */}
@@ -364,31 +382,45 @@ const Navbar = () => {
               <div className="flex-1 overflow-y-auto p-6 space-y-8">
                 <div className="space-y-4">
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Account</p>
-                  <button
-                    onClick={handleOpenLogin}
-                    className="flex items-center w-full px-4 py-3.5 text-purple-700 border border-purple-200 bg-purple-50/50 rounded-2xl font-bold hover:bg-purple-50 transition-colors"
-                  >
-                    Log in
-                  </button>
-                  <Link
-                    to="/register"
-                    className="flex items-center w-full px-4 py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-500/25"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign up
-                  </Link>
+                  {isAuthenticated ? (
+                    <Link
+                      to={loggedInAppLink.to}
+                      className="flex items-center justify-center w-full px-4 py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-500/25"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      {loggedInAppLink.label}
+                    </Link>
+                  ) : (
+                    <>
+                      <button
+                        onClick={handleOpenLogin}
+                        className="flex items-center w-full px-4 py-3.5 text-purple-700 border border-purple-200 bg-purple-50/50 rounded-2xl font-bold hover:bg-purple-50 transition-colors"
+                      >
+                        Log in
+                      </button>
+                      <Link
+                        to="/register"
+                        className="flex items-center w-full px-4 py-3.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl font-bold shadow-lg shadow-purple-500/25"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        Sign up
+                      </Link>
+                    </>
+                  )}
                 </div>
-                <div className="space-y-4 pt-4 border-t border-gray-100">
-                  <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Business</p>
-                  <Link
-                    to="/register/restaurant"
-                    className="flex items-center justify-between px-4 py-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors group"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    <span className="font-semibold text-gray-700">For Restaurants</span>
-                    <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
-                  </Link>
-                </div>
+                {!isAuthenticated && (
+                  <div className="space-y-4 pt-4 border-t border-gray-100">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest pl-1">Business</p>
+                    <Link
+                      to="/register/restaurant"
+                      className="flex items-center justify-between px-4 py-3 rounded-2xl bg-gray-50 hover:bg-gray-100 transition-colors group"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <span className="font-semibold text-gray-700">For Restaurants</span>
+                      <span className="text-gray-400 group-hover:translate-x-1 transition-transform">→</span>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>

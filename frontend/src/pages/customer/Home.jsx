@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import CustomerLayout from '../../components/layout/Customer/CustomerLayout';
 import RestaurantCard from '../../components/customer/RestaurantCard';
@@ -13,6 +13,8 @@ import {
 import { checkIsClosed } from '../../utils/restaurantUtils';
 
 
+const RECO_PAGE_SIZE = 8;
+
 const CustomerHome = () => {
   const { profile, user, isAuthenticated: isLoggedIn } = useAuth();
   const { cartItems: cartItemsList } = useCart();
@@ -25,6 +27,15 @@ const CustomerHome = () => {
   const [recommendations, setRecommendations] = useState([]);
   const [recoScenario, setRecoScenario] = useState(null);
   const [recoLoading, setRecoLoading] = useState(false);
+  const [recoHasMore, setRecoHasMore] = useState(false);
+  const [recoLoadingMore, setRecoLoadingMore] = useState(false);
+  const recommendationsRef = useRef([]);
+  const recoFetchGen = useRef(0);
+  const recoObserver = useRef(null);
+
+  useEffect(() => {
+    recommendationsRef.current = recommendations;
+  }, [recommendations]);
 
   // Time-based greeting
   const hour = new Date().getHours();
@@ -37,18 +48,27 @@ const CustomerHome = () => {
     const fetchData = async () => {
       try {
         const { restaurantService } = await import('../../services/restaurant.service');
+        setRecommendations([]);
+        setRecoScenario(null);
 
         // Kick off recommendations in parallel before awaiting the main restaurant list
         let recoPromise = null;
         if (isLoggedIn && profile) {
+          recoFetchGen.current += 1;
           setRecoLoading(true);
+          setRecoHasMore(false);
           const city =
             profile?.addresses?.find(a => a.isDefault)?.city ||
             profile?.addresses?.[0]?.city ||
             undefined;
           recoPromise = import('../../services/recommendation.service')
             .then(({ recommendationService }) =>
-              recommendationService.getRecommendations({ city, type: deliveryMode, limit: 8 })
+              recommendationService.getRecommendations({
+                city,
+                type: deliveryMode,
+                limit: RECO_PAGE_SIZE,
+                offset: 0,
+              })
             )
             .catch(() => null);
         }
@@ -88,9 +108,15 @@ const CustomerHome = () => {
           // Resolve recommendations — runs in parallel with orders fetch above
           if (recoPromise) {
             const recoData = await recoPromise;
-            if (recoData?.data?.restaurants?.length > 0) {
-              setRecommendations(recoData.data.restaurants);
+            const list = recoData?.data?.restaurants || [];
+            if (list.length > 0) {
+              setRecommendations(list);
               setRecoScenario(recoData.data.scenario);
+              setRecoHasMore(recoData.data.hasMore === true);
+            } else {
+              setRecommendations([]);
+              setRecoScenario(recoData?.data?.scenario || null);
+              setRecoHasMore(false);
             }
             setRecoLoading(false);
           }
@@ -103,7 +129,65 @@ const CustomerHome = () => {
       }
     };
     fetchData();
-  }, [isLoggedIn, profile]);
+  }, [isLoggedIn, profile, deliveryMode]);
+
+  const loadMoreRecommendations = useCallback(async () => {
+    if (!recoHasMore || recoLoadingMore || recoLoading || !isLoggedIn || !profile) return;
+    const city =
+      profile?.addresses?.find(a => a.isDefault)?.city ||
+      profile?.addresses?.[0]?.city ||
+      undefined;
+    const gen = recoFetchGen.current;
+    setRecoLoadingMore(true);
+    try {
+      const { recommendationService } = await import('../../services/recommendation.service');
+      const offset = recommendationsRef.current.length;
+      const recoData = await recommendationService.getRecommendations({
+        city,
+        type: deliveryMode,
+        limit: RECO_PAGE_SIZE,
+        offset,
+      });
+      if (gen !== recoFetchGen.current) return;
+      const more = recoData?.data?.restaurants || [];
+      if (more.length > 0) {
+        setRecommendations((prev) => [...prev, ...more]);
+      }
+      setRecoHasMore(recoData?.data?.hasMore === true);
+    } catch (e) {
+      if (import.meta.env.DEV) console.warn('Load more recommendations failed:', e);
+    } finally {
+      setRecoLoadingMore(false);
+    }
+  }, [recoHasMore, recoLoadingMore, recoLoading, isLoggedIn, profile, deliveryMode]);
+
+  const lastRecoCardRef = useCallback(
+    (node) => {
+      if (recoLoadingMore || !recoHasMore || recommendations.length === 0) {
+        if (recoObserver.current) {
+          recoObserver.current.disconnect();
+          recoObserver.current = null;
+        }
+        return;
+      }
+      if (recoObserver.current) recoObserver.current.disconnect();
+      recoObserver.current = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting) loadMoreRecommendations();
+        },
+        { root: null, rootMargin: '140px', threshold: 0 }
+      );
+      if (node) recoObserver.current.observe(node);
+    },
+    [recoLoadingMore, recoHasMore, recommendations.length, loadMoreRecommendations]
+  );
+
+  useEffect(
+    () => () => {
+      if (recoObserver.current) recoObserver.current.disconnect();
+    },
+    []
+  );
 
   // Action Cards Data
   const actionCards = [
@@ -114,7 +198,7 @@ const CustomerHome = () => {
       icon: QrCode,
       color: 'bg-gradient-to-r from-accent-500 to-pink-500',
       alwaysVisible: true,
-      onClick: () => { },
+      onClick: () => navigate('/scan'),
     },
     {
       id: 'reorder',
@@ -139,6 +223,7 @@ const CustomerHome = () => {
   // Map backend restaurants to our frontend UI rails
 
   const displayRestaurants = recommendations.length > 0 ? recommendations : restaurants;
+  const showRecoLoadingState = isLoggedIn && recoLoading;
 
   const restaurantRails = [
     {
@@ -303,6 +388,11 @@ const CustomerHome = () => {
                 <div className="flex items-center space-x-3">
                   <rail.icon className="w-6 h-6 text-primary-600" />
                   <h2 className="text-xl font-bold text-gray-900">{rail.title}</h2>
+                  {recoScenario === 'ai_personalized' && (
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-primary-100 text-primary-700">
+                      AI Personalized
+                    </span>
+                  )}
                 </div>
 
                 <button className="text-primary-600 hover:text-primary-700 font-medium flex items-center">
@@ -312,14 +402,43 @@ const CustomerHome = () => {
 
               {/* Restaurant Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {rail.restaurants.map((restaurant) => (
-                  <RestaurantCard
-                    key={restaurant.id}
-                    restaurant={restaurant}
-                    mode={deliveryMode}
-                  />
-                ))}
+                {showRecoLoadingState
+                  ? [...Array(4)].map((_, idx) => (
+                      <div key={idx} className="bg-white border border-gray-200 rounded-xl overflow-hidden animate-pulse">
+                        <div className="h-40 bg-gray-200" />
+                        <div className="p-4 space-y-3">
+                          <div className="h-4 bg-gray-200 rounded w-2/3" />
+                          <div className="h-3 bg-gray-200 rounded w-1/2" />
+                          <div className="h-3 bg-gray-200 rounded w-3/4" />
+                        </div>
+                      </div>
+                    ))
+                  : rail.restaurants.map((restaurant, idx) => {
+                      const isLast =
+                        displayRestaurants.length > 0 &&
+                        recoHasMore &&
+                        idx === rail.restaurants.length - 1;
+                      return (
+                        <div
+                          key={restaurant.id}
+                          ref={isLast ? lastRecoCardRef : undefined}
+                          className="min-w-0"
+                        >
+                          <RestaurantCard restaurant={restaurant} mode={deliveryMode} />
+                        </div>
+                      );
+                    })}
               </div>
+              {recoHasMore && !showRecoLoadingState && recommendations.length > 0 && (
+                <div className="flex justify-center mt-6 min-h-[2rem]">
+                  {recoLoadingMore && (
+                    <div
+                      className="w-8 h-8 border-4 border-primary-500 border-t-transparent rounded-full animate-spin"
+                      aria-hidden
+                    />
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -335,7 +454,11 @@ const CustomerHome = () => {
               <p className="text-sm opacity-90">Scan the QR code to order directly from your table</p>
             </div>
           </div>
-          <button className="w-full mt-4 py-3 bg-white text-accent-600 rounded-lg font-bold">
+          <button
+            type="button"
+            onClick={() => navigate('/scan')}
+            className="w-full mt-4 py-3 bg-white text-accent-600 rounded-lg font-bold"
+          >
             Open Scanner
           </button>
         </div>

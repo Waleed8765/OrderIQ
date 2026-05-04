@@ -32,6 +32,7 @@ const ProfileSettings = lazy(() => import("./pages/customer/ProfileSettings"));
 const Rewards = lazy(() => import("./pages/customer/Rewards"));
 const Referrals = lazy(() => import("./pages/customer/Referrals"));
 const QRMenuPage = lazy(() => import("./pages/customer/QRMenuPage"));
+const QRScanPage = lazy(() => import("./pages/customer/QRScanPage"));
 
 // Restaurant
 const RestaurantDashboard = lazy(() => import("./pages/restaurant/Dashboard"));
@@ -61,6 +62,7 @@ function App() {
         <Routes>
           {/* Auth */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/scan" element={<QRScanPage />} />
         <Route path="/register" element={<RoleSelection />} />
         <Route path="/register/customer" element={<CustomerSignup />} />
         <Route path="/register/restaurant" element={<RestaurantSignup />} />

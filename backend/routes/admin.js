@@ -5,6 +5,7 @@ const {
     getAllUsers,
     getAllOrders,
     updateRestaurantStatus,
+    toggleRestaurantPromotion,
     updateUserStatus,
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/auth');
@@ -18,6 +19,7 @@ router.get('/dashboard', getDashboardStats);
 
 router.route('/restaurants').get(getAllRestaurants);
 router.route('/restaurants/:id/status').patch(updateRestaurantStatus);
+router.route('/restaurants/:id/promote').patch(toggleRestaurantPromotion);
 
 router.route('/users').get(getAllUsers);
 router.route('/users/:id/status').patch(updateUserStatus);

@@ -6,7 +6,7 @@ const { getRecommendations } = require('../services/recommendationService');
 // @access  Private (CUSTOMER)
 exports.getRecommendations = async (req, res) => {
     try {
-        const { type, limit } = req.query;
+        const { type, limit, offset } = req.query;
         let { city } = req.query;
 
         // Resolve city: explicit query param → user's default address → no filter
@@ -18,11 +18,15 @@ exports.getRecommendations = async (req, res) => {
             city = defaultAddr?.city || null;
         }
 
+        const pageLimit = Math.min(Math.max(parseInt(limit, 10) || 8, 1), 20);
+        const pageOffset = Math.max(parseInt(offset, 10) || 0, 0);
+
         const result = await getRecommendations({
             userId: req.user.id,
             city,
             type: type || null,
-            limit: Math.min(parseInt(limit, 10) || 10, 20)
+            offset: pageOffset,
+            limit: pageLimit
         });
 
         res.status(200).json({ success: true, data: result });

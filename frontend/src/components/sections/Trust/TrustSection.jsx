@@ -41,7 +41,15 @@ const TrustSection = () => {
               We've built a platform that works for everyone. Restaurants increase efficiency 
               while customers enjoy a seamless ordering experience.
             </p>
-            <button className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium">
+            <button
+              onClick={() => {
+                const el = document.getElementById('features');
+                if (el) {
+                  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+              className="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium"
+            >
               Learn more about OrderIQ
             </button>
           </div>

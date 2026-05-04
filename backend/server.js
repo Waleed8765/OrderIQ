@@ -9,6 +9,7 @@ const { Server } = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
+const shouldInitializeBackgroundServices = process.env.DISABLE_BACKGROUND_SERVICES !== 'true';
 
 // Socket.IO Setup
 const io = new Server(server, {
@@ -63,11 +64,15 @@ const recommendationRoutes = require('./routes/recommendations');
 
 // RAG Module (AI Chat Assistant)
 const rag = require('./rag');
-rag.initialize();
+if (shouldInitializeBackgroundServices) {
+    rag.initialize();
+}
 
 // WhatsApp Bot Service
 const whatsappService = require('./services/whatsappService');
-whatsappService.initialize(io);
+if (shouldInitializeBackgroundServices) {
+    whatsappService.initialize(io);
+}
 
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
@@ -112,6 +117,10 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5001;
 
-server.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+    server.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+}
+
+module.exports = { app, server };

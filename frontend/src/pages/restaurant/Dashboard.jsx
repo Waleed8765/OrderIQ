@@ -83,10 +83,36 @@ const RestaurantDashboard = () => {
   }, [restaurant]);
 
   const stats = [
-    { label: 'Today\'s Orders', value: todayStats.orders.toString(), change: null, icon: <TrendingUp size={24} />, color: 'primary' },
-    { label: 'Active Staff', value: todayStats.activeStaff, icon: <Users size={24} />, color: 'secondary' },
-    { label: 'Avg Prep Time', value: todayStats.avgPrepTime > 0 ? `${todayStats.avgPrepTime} min` : '-', change: null, icon: <Clock size={24} />, color: 'warning' },
-    { label: 'Today\'s Revenue', value: `PKR ${todayStats.revenue.toFixed(0)}`, icon: <DollarSign size={24} />, color: 'success' },
+    {
+      label: 'Today\'s Orders',
+      value: todayStats.orders.toString(),
+      change: null,
+      icon: <TrendingUp size={24} />,
+      iconBgClass: 'bg-primary/10',
+      iconTextClass: 'text-primary'
+    },
+    {
+      label: 'Active Staff',
+      value: todayStats.activeStaff,
+      icon: <Users size={24} />,
+      iconBgClass: 'bg-secondary/10',
+      iconTextClass: 'text-secondary'
+    },
+    {
+      label: 'Avg Prep Time',
+      value: todayStats.avgPrepTime > 0 ? `${todayStats.avgPrepTime} min` : '-',
+      change: null,
+      icon: <Clock size={24} />,
+      iconBgClass: 'bg-warning/10',
+      iconTextClass: 'text-warning'
+    },
+    {
+      label: 'Today\'s Revenue',
+      value: `PKR ${todayStats.revenue.toFixed(0)}`,
+      icon: <DollarSign size={24} />,
+      iconBgClass: 'bg-success/10',
+      iconTextClass: 'text-success'
+    },
   ];
 
   return (
@@ -98,8 +124,8 @@ const RestaurantDashboard = () => {
         {stats.map((stat, index) => (
           <div key={index} className="bg-white rounded-xl border border-neutral-200 p-6">
             <div className="flex items-center justify-between mb-4">
-              <div className={`p-2 rounded-lg bg-${stat.color}/10`}>
-                <div className={`text-${stat.color}`}>
+              <div className={`p-2 rounded-lg ${stat.iconBgClass}`}>
+                <div className={stat.iconTextClass}>
                   {stat.icon}
                 </div>
               </div>
@@ -143,7 +169,7 @@ const RestaurantDashboard = () => {
                 </div>
               </div>
             </button>
-            <button onClick={() => navigate("/restaurant/team ")} className="p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 text-left">
+            <button onClick={() => navigate("/restaurant/team")} className="p-4 border border-neutral-200 rounded-lg hover:bg-neutral-50 text-left">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-success/10 rounded-lg">
                   <div className="text-success">👥</div>

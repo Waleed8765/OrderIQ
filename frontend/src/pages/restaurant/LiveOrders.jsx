@@ -9,6 +9,7 @@ import io from 'socket.io-client';
 import { toast } from 'react-hot-toast';
 import { useRestaurant } from '../../features/restaurant/RestaurantContext';
 import { orderService } from '../../services/order.service';
+import { getSocketBaseUrl } from '../../utils/network';
 
 const LiveOrders = () => {
   const { restaurant } = useRestaurant();
@@ -90,7 +91,7 @@ const LiveOrders = () => {
 
     if (restaurant?.id) {
       // Connect to websocket
-      const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5002';
+      const socketUrl = getSocketBaseUrl();
       socketRef.current = io(socketUrl);
 
       socketRef.current.on('connect', () => {
@@ -130,7 +131,7 @@ const LiveOrders = () => {
   };
 
   const statusChips = [
-    { id: 'new', label: 'New', count: orders.filter(o => o.status === 'pending').length, color: 'bg-primary-500' },
+    { id: 'pending', label: 'New', count: orders.filter(o => o.status === 'pending').length, color: 'bg-primary-500' },
     { id: 'accepted', label: 'Accepted', count: orders.filter(o => o.status === 'accepted').length, color: 'bg-secondary-500' },
     { id: 'preparing', label: 'Preparing', count: orders.filter(o => o.status === 'preparing').length, color: 'bg-warning' },
     { id: 'ready', label: 'Ready', count: orders.filter(o => o.status === 'ready').length, color: 'bg-success' },
@@ -174,7 +175,7 @@ const LiveOrders = () => {
 
   const getStatusConfig = (status) => {
     switch (status) {
-      case 'new':
+      case 'pending':
         return { color: 'bg-primary-500', text: 'New' };
       case 'accepted':
         return { color: 'bg-secondary-500', text: 'Accepted' };
@@ -264,7 +265,7 @@ const LiveOrders = () => {
             {showFilters && (
               <div className="absolute right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-lg p-2 z-20">
                 <div className="text-xs font-semibold text-neutral-500 px-2 py-1">Status</div>
-                {['all', 'new', 'accepted', 'preparing', 'ready'].map((status) => (
+                {['all', 'pending', 'accepted', 'preparing', 'ready'].map((status) => (
                   <button
                     key={status}
                     onClick={() => {
@@ -357,7 +358,7 @@ const LiveOrders = () => {
                   </div>
 
                   {/* New Order Highlight */}
-                  {order.status === 'new' && (
+                  {order.status === 'pending' && (
                     <div className="absolute top-2 right-2 w-2 h-2 bg-primary-500 rounded-full animate-pulse"></div>
                   )}
                 </div>

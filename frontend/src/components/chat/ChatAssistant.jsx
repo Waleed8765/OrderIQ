@@ -82,19 +82,21 @@ export default function ChatAssistant() {
       {isOpen && (
         <div className="fixed bottom-20 right-4 z-50 w-[380px] h-[520px] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="bg-orange-500 text-white px-4 py-3 flex items-center justify-between shrink-0">
+          <div className="bg-gradient-to-r from-primary-600 via-primary-500 to-accent-500 text-white px-4 py-3 flex items-center justify-between shrink-0 shadow-md shadow-primary-500/25">
             <div className="flex items-center gap-2">
-              <Bot size={20} />
+              <Bot size={20} className="opacity-95" />
               <div>
                 <h3 className="font-semibold text-sm">OrderIQ Assistant</h3>
-                <p className="text-xs text-orange-100">
+                <p className="text-xs text-white/85">
                   Ask me anything about food!
                 </p>
               </div>
             </div>
             <button
+              type="button"
               onClick={() => setIsOpen(false)}
-              className="hover:bg-orange-600 rounded-full p-1 transition"
+              className="hover:bg-white/15 rounded-full p-1 transition"
+              aria-label="Close chat"
             >
               <X size={18} />
             </button>
@@ -108,14 +110,14 @@ export default function ChatAssistant() {
                 className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0 mt-1">
-                    <Bot size={14} className="text-orange-600" />
+                  <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center shrink-0 mt-1 ring-1 ring-primary-200/60">
+                    <Bot size={14} className="text-primary-600" />
                   </div>
                 )}
                 <div
                   className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
                     msg.role === "user"
-                      ? "bg-orange-500 text-white rounded-br-md"
+                      ? "bg-gradient-to-r from-primary-600 to-accent-500 text-white rounded-br-md shadow-sm shadow-primary-500/20"
                       : "bg-white text-gray-800 border border-gray-200 rounded-bl-md shadow-sm"
                   }`}
                 >
@@ -146,7 +148,7 @@ export default function ChatAssistant() {
                           ),
                           li: ({ children }) => (
                             <li className="flex items-start gap-1.5">
-                              <span className="text-orange-500 mt-0.5">•</span>
+                              <span className="text-primary-500 mt-0.5">•</span>
                               <span>{children}</span>
                             </li>
                           ),
@@ -157,7 +159,7 @@ export default function ChatAssistant() {
                           ),
                           hr: () => <hr className="my-2 border-gray-200" />,
                           blockquote: ({ children }) => (
-                            <blockquote className="border-l-2 border-orange-400 pl-2 my-1.5 text-gray-600 text-xs italic">
+                            <blockquote className="border-l-2 border-primary-400 pl-2 my-1.5 text-gray-600 text-xs italic">
                               {children}
                             </blockquote>
                           ),
@@ -166,7 +168,7 @@ export default function ChatAssistant() {
                               href={href}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-orange-600 underline hover:text-orange-700"
+                              className="text-primary-600 underline hover:text-accent-600"
                             >
                               {children}
                             </a>
@@ -181,8 +183,8 @@ export default function ChatAssistant() {
                   )}
                 </div>
                 {msg.role === "user" && (
-                  <div className="w-7 h-7 rounded-full bg-gray-200 flex items-center justify-center shrink-0 mt-1">
-                    <User size={14} className="text-gray-600" />
+                  <div className="w-7 h-7 rounded-full bg-accent-100 flex items-center justify-center shrink-0 mt-1 ring-1 ring-accent-200/60">
+                    <User size={14} className="text-accent-700" />
                   </div>
                 )}
               </div>
@@ -190,11 +192,11 @@ export default function ChatAssistant() {
 
             {isLoading && (
               <div className="flex gap-2 justify-start">
-                <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
-                  <Bot size={14} className="text-orange-600" />
+                <div className="w-7 h-7 rounded-full bg-primary-100 flex items-center justify-center shrink-0 ring-1 ring-primary-200/60">
+                  <Bot size={14} className="text-primary-600" />
                 </div>
                 <div className="bg-white border border-gray-200 rounded-2xl rounded-bl-md px-4 py-2 shadow-sm">
-                  <Loader2 size={16} className="animate-spin text-orange-500" />
+                  <Loader2 size={16} className="animate-spin text-primary-500" />
                 </div>
               </div>
             )}
@@ -212,13 +214,14 @@ export default function ChatAssistant() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask about restaurants, menus..."
-                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-300"
                 disabled={isLoading}
               />
               <button
+                type="button"
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
-                className="w-9 h-9 rounded-full bg-orange-500 text-white flex items-center justify-center hover:bg-orange-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-9 h-9 rounded-full bg-gradient-to-r from-primary-600 to-accent-500 text-white flex items-center justify-center shadow-md shadow-primary-500/25 hover:from-primary-700 hover:to-accent-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Send size={16} />
               </button>
@@ -229,9 +232,10 @@ export default function ChatAssistant() {
 
       {/* Floating Chat Bubble */}
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full bg-orange-500 text-white shadow-lg hover:bg-orange-600 transition-all hover:scale-105 flex items-center justify-center"
-        aria-label="Open chat assistant"
+        className="fixed bottom-4 right-4 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-accent-500 text-white shadow-lg shadow-primary-500/35 hover:from-primary-700 hover:to-accent-600 transition-all hover:scale-105 flex items-center justify-center ring-2 ring-white/80"
+        aria-label={isOpen ? "Close chat assistant" : "Open chat assistant"}
       >
         {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
       </button>

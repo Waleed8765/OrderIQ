@@ -24,7 +24,7 @@ const Features = () => {
   ];
 
   return (
-    <section className="py-16 bg-neutral-50">
+    <section id="features" className="py-16 bg-neutral-50">
       <div className="max-w-content mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-neutral-900 mb-4">
@@ -50,9 +50,15 @@ const Features = () => {
               <p className="text-neutral-600">
                 {feature.description}
               </p>
-              <a href="#" className="inline-block mt-4 text-primary-600 hover:text-primary-700 font-medium">
+              <button
+                onClick={() => {
+                  const el = document.getElementById('cta');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="inline-block mt-4 text-primary-600 hover:text-primary-700 font-medium"
+              >
                 Learn more →
-              </a>
+              </button>
             </div>
           ))}
         </div>

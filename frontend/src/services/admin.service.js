@@ -18,6 +18,11 @@ export const adminService = {
         return response.data;
     },
 
+    toggleRestaurantPromotion: async (restaurantId, promoted) => {
+        const response = await api.patch(`/admin/restaurants/${restaurantId}/promote`, { promoted });
+        return response.data;
+    },
+
     // Users
     getAllUsers: async (params = {}) => {
         const response = await api.get('/admin/users', { params });

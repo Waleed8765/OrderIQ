@@ -24,7 +24,7 @@ const AdminLayout = () => {
         { id: 'restaurants', label: 'Restaurants', icon: Store, path: '/admin/restaurants' },
         { id: 'users', label: 'Users', icon: Users, path: '/admin/users' },
         { id: 'orders', label: 'Orders', icon: ShoppingBag, path: '/admin/orders' },
-        { id: 'campaigns', label: 'Campaigns', icon: Megaphone, path: '/admin/campaigns' },
+        { id: 'promotions', label: 'Promotions', icon: Megaphone, path: '/admin/campaigns' },
         //{ id: 'monitoring', label: 'Monitoring', icon: Activity, path: '/admin/monitoring' },
         //{ id: 'reports', label: 'Reports', icon: FileBarChart, path: '/admin/reports' },
         { id: 'settings', label: 'Settings', icon: Settings, path: '/admin/settings' },

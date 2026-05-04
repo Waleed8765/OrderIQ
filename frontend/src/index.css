@@ -18,3 +18,23 @@
     font-family: 'Poppins', 'Inter', system-ui, sans-serif;
   }
 }
+
+@layer components {
+  /* Table QR scanner: one video tile; avoids odd sizing / duplicate-looking feeds */
+  .orderiq-qr-root {
+    @apply relative w-full max-w-md overflow-hidden rounded-xl bg-black ring-2 ring-white/20;
+    aspect-ratio: 3 / 4;
+    max-height: min(70vh, 560px);
+  }
+
+  .orderiq-qr-root > .orderiq-qr-surface {
+    @apply min-h-0 h-full w-full;
+  }
+
+  .orderiq-qr-root video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover;
+    display: block !important;
+  }
+}

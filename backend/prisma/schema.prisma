@@ -132,6 +132,7 @@ model Restaurant {
   priceRange     String    @default("$$") // e.g., "$", "$$", "$$$"
   prepTime       Int       @default(20)   // Average prep time in minutes
   promoted       Boolean   @default(false)
+  schedule       Json?     // Day-specific hours: { "Monday": { "open": "09:00", "close": "22:00", "closed": false }, ... }
   
   // Service Types
   dineIn         Boolean   @default(true)

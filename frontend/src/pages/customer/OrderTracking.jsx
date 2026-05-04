@@ -5,8 +5,9 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import { orderService } from '../../services/order.service';
 import { io } from 'socket.io-client';
+import { getSocketBaseUrl } from '../../utils/network';
 
-const SOCKET_URL = (import.meta.env.VITE_API_URL?.replace('/api', '')) || 'http://localhost:5000';
+const SOCKET_URL = getSocketBaseUrl();
 
 const OrderTracking = () => {
     const { id } = useParams();

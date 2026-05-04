@@ -96,6 +96,71 @@ exports.protect = async (req, res, next) => {
 };
 
 /**
+ * Optional auth: attaches req.user when a valid Bearer token is present; otherwise req.user stays null.
+ * Does not return 401 (for public routes that personalize when possible).
+ */
+exports.optionalProtect = async (req, res, next) => {
+    req.user = null;
+    try {
+        if (!isInitialized) {
+            return next();
+        }
+        if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer')) {
+            return next();
+        }
+        const token = req.headers.authorization.split(' ')[1];
+        if (!token) {
+            return next();
+        }
+
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        const claimsRole = decodedToken.role || (decodedToken.admin === true ? 'ADMIN' : null);
+
+        let user = await prisma.user.findUnique({
+            where: { firebaseUid: decodedToken.uid }
+        });
+
+        if (!user) {
+            try {
+                const referralCode = `REF-${decodedToken.uid.substring(0, 5).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
+                const syncRole = claimsRole || 'CUSTOMER';
+                user = await prisma.user.create({
+                    data: {
+                        firebaseUid: decodedToken.uid,
+                        email: decodedToken.email,
+                        fullName: decodedToken.name || decodedToken.email.split('@')[0],
+                        role: syncRole,
+                        referralCode: referralCode
+                    }
+                });
+            } catch (createError) {
+                if (createError.code === 'P2002') {
+                    user = await prisma.user.findUnique({
+                        where: { firebaseUid: decodedToken.uid }
+                    });
+                }
+                if (!user) {
+                    return next();
+                }
+            }
+        }
+
+        if (claimsRole && claimsRole !== user.role && claimsRole !== 'CUSTOMER') {
+            user = await prisma.user.update({
+                where: { id: user.id },
+                data: { role: claimsRole }
+            });
+        }
+
+        req.user = user;
+        req.firebaseUser = decodedToken;
+    } catch {
+        req.user = null;
+    }
+    next();
+};
+
+/**
  * Authorize middleware
  * Grants access to specific roles only.
  * Must be used AFTER protect middleware.

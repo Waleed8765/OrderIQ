@@ -35,7 +35,7 @@ const Filters = () => {
   }, []);
 
   useEffect(() => {
-    // initialize from URL
+    // initialize from URL (RestaurantGrid reads cuisine from URL — keep in sync)
     const params = new URLSearchParams(location.search);
     const cuisineParam = params.get('cuisine');
     if (cuisineParam) {
@@ -46,6 +46,18 @@ const Filters = () => {
     }
   }, [location.search]);
 
+  /** Push cuisine list to query string so the grid refetches with the same filters. */
+  const navigateWithCuisineList = (cuisineList) => {
+    const params = new URLSearchParams(location.search);
+    if (cuisineList.length > 0) {
+      params.set('cuisine', cuisineList.join(','));
+    } else {
+      params.delete('cuisine');
+    }
+    const qs = params.toString();
+    navigate(qs ? `${location.pathname}?${qs}` : location.pathname, { replace: true });
+  };
+
   const handleCuisineSelect = (cuisine) => {
     setSelectedCuisines(prev => 
       prev.includes(cuisine) 
@@ -54,12 +66,17 @@ const Filters = () => {
     );
   };
 
+  const removeCuisineChip = (cuisine) => {
+    const next = selectedCuisines.filter((c) => c !== cuisine);
+    navigateWithCuisineList(next);
+  };
+
   const clearAllFilters = () => {
-    setSelectedCuisines([]);
     setActiveFilters([]);
     const params = new URLSearchParams(location.search);
     params.delete('cuisine');
-    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+    const qs = params.toString();
+    navigate(qs ? `${location.pathname}?${qs}` : location.pathname, { replace: true });
   };
 
   return (
@@ -117,20 +134,17 @@ const Filters = () => {
                       </div>
                       <div className="flex justify-between border-t border-neutral-200 pt-4">
                         <button
-                          onClick={() => setSelectedCuisines([])}
+                          onClick={() => {
+                            navigateWithCuisineList([]);
+                            setShowCuisineDropdown(false);
+                          }}
                           className="text-sm text-neutral-500 hover:text-neutral-700"
                         >
                           Clear
                         </button>
                         <button
                           onClick={() => {
-                            const params = new URLSearchParams(location.search);
-                            if (selectedCuisines.length > 0) {
-                              params.set('cuisine', selectedCuisines.join(','));
-                            } else {
-                              params.delete('cuisine');
-                            }
-                            navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+                            navigateWithCuisineList(selectedCuisines);
                             setShowCuisineDropdown(false);
                           }}
                           className="px-4 py-2 bg-primary-600 text-white text-sm rounded-lg hover:bg-primary-700"
@@ -200,7 +214,7 @@ const Filters = () => {
                   params.set('sort', e.target.value);
                   navigate(`${location.pathname}?${params.toString()}`, { replace: true });
                 }}
-                className="appearance-none px-4 py-2 bg-white border border-neutral-300 rounded-lg hover:border-neutral-400 focus:outline-none focus:ring-2 focus:ring-primary-500 pr-10 cursor-pointer"
+                className="appearance-none px-4 py-2 bg-white border border-primary-300 rounded-lg hover:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-500 pr-10 cursor-pointer text-neutral-900"
               >
                 {sortOptions.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -233,7 +247,7 @@ const Filters = () => {
                     params.set('sort', e.target.value);
                     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
                   }}
-                  className="px-4 py-2 bg-white border border-neutral-300 rounded-lg hover:border-neutral-400"
+                  className="px-4 py-2 bg-white border border-primary-300 rounded-lg hover:border-primary-400 text-neutral-900"
                 >
                   <option value="recommended">Sort: Recommended</option>
                   <option value="rating">Sort: Rating</option>
@@ -263,7 +277,8 @@ const Filters = () => {
                 >
                   <span className="text-sm">{cuisine}</span>
                   <button
-                    onClick={() => setSelectedCuisines(prev => prev.filter(c => c !== cuisine))}
+                    type="button"
+                    onClick={() => removeCuisineChip(cuisine)}
                     className="ml-2 text-primary-500 hover:text-primary-700"
                   >
                     <X className="w-3 h-3" />

@@ -171,7 +171,7 @@ npm install
 Create a `.env` file in `backend/`:
 
 ```env
-PORT=5001
+PORT=5002
 
 # PostgreSQL — Supabase connection pooler URL
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/postgres"
@@ -186,9 +186,16 @@ CLOUDINARY_CLOUD_NAME="your-cloud-name"
 CLOUDINARY_API_KEY="your-api-key"
 CLOUDINARY_API_SECRET="your-api-secret"
 
-# RAG / AI Chat Assistant
+# RAG / AI Chat Assistant + AI restaurant recommendations (Groq → local Ollama)
 GROQ_API_KEY="your-groq-api-key"          # Free at https://console.groq.com
+GROQ_MODEL="llama-3.3-70b-versatile"
 OLLAMA_BASE_URL="http://localhost:11434"
+OLLAMA_LLM_MODEL="gemma3:1b"
+
+# AI Recommendations (timeout / cache / candidate pool; LLM uses GROQ_* and OLLAMA_* above)
+AI_RECOMMENDATION_TIMEOUT_MS=8000
+AI_RECOMMENDATION_CANDIDATE_POOL=12
+AI_RECOMMENDATION_CACHE_TTL_MS=120000
 ```
 
 Push the database schema:
@@ -211,7 +218,7 @@ npm run dev      # development (nodemon)
 npm start        # production
 ```
 
-The API will be available at `http://localhost:5001`.
+The API will be available at `http://localhost:5002`.
 
 ---
 
@@ -225,8 +232,7 @@ npm install
 Create a `.env` file in `frontend/`:
 
 ```env
-VITE_API_URL=http://localhost:5001/api
-VITE_SOCKET_URL=http://localhost:5001
+VITE_API_URL=http://localhost:5002/api
 
 # Firebase Web SDK
 VITE_FIREBASE_API_KEY=your-api-key
@@ -285,8 +291,8 @@ The app will be available at `http://localhost:5173`.
 | --------------------- | ------------------- | ------------------------------------- |
 | `join_restaurant`     | Client → Server     | Join a restaurant's notification room |
 | `join_order`          | Client → Server     | Join an order tracking room           |
-| `new_order`           | Server → Restaurant | Notify restaurant of a new order      |
-| `order_status_update` | Server → Customer   | Broadcast order status change         |
+| `newOrder`            | Server → Restaurant | Notify restaurant of a new order      |
+| `orderStatusUpdate`   | Server → Customer   | Broadcast order status change         |
 
 ---
 
@@ -353,7 +359,7 @@ Then log in at `/admin` with the credentials set in the script.
 
 ```
 1. Open Ollama app         ← Must be running first (for AI Chat)
-2. npm run dev (backend)   ← Starts on port 5001
+2. npm run dev (backend)   ← Starts on port 5002
 3. npm run dev (frontend)  ← Starts on port 5173
 ```
 
@@ -370,6 +376,19 @@ npm run build
 # Output: frontend/dist/
 
 # Backend — no build step required, deploy server.js directly
+```
+
+---
+
+## Testing
+
+```bash
+# Run all tests from project root
+npm test
+
+# Run individual suites
+npm run test:backend
+npm run test:frontend
 ```
 
 ---

@@ -24,8 +24,32 @@ const Hero = () => {
   ];
 
   return (
-    <section className="pt-24 pb-20 md:pt-32 md:pb-24 bg-gradient-to-b from-white to-neutral-50">
-      <div className="max-w-content mx-auto px-6">
+    <section className="relative isolate overflow-hidden pt-24 pb-20 md:pt-32 md:pb-24">
+      {/* Animated mesh — isolate + z-0 keeps layers above parent bg-white (negative z-index was hidden behind the page) */}
+      <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary-50 via-white to-neutral-50/95" />
+        {/* Slow rotating color wash — obvious directional motion */}
+        <div
+          className="absolute -inset-[45%] opacity-70 motion-safe:animate-hero-aurora motion-reduce:animate-none bg-[conic-gradient(from_200deg_at_50%_50%,rgba(155,93,229,0.22)_0deg,rgba(241,91,181,0.18)_100deg,rgba(0,187,249,0.16)_200deg,rgba(155,93,229,0.2)_360deg)] blur-3xl"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-primary-500/[0.18] via-accent-500/[0.14] to-secondary-500/[0.16] bg-[length:300%_200%] motion-safe:animate-hero-shimmer motion-reduce:animate-none"
+        />
+        <div className="absolute inset-0 motion-safe:animate-hero-spot-purple motion-reduce:animate-none bg-[radial-gradient(ellipse_85%_55%_at_50%_-15%,rgba(155,93,229,0.32),transparent_58%)]" />
+        <div className="absolute inset-0 motion-safe:animate-hero-spot-pink motion-reduce:animate-none bg-[radial-gradient(ellipse_60%_45%_at_100%_55%,rgba(241,91,181,0.22),transparent_52%)]" />
+        <div
+          className="absolute inset-0 bg-[linear-gradient(to_right,rgba(126,60,194,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(126,60,194,0.1)_1px,transparent_1px)] bg-[size:2.25rem_2.25rem] sm:bg-[size:3rem_3rem] [mask-image:radial-gradient(ellipse_78%_68%_at_50%_35%,black_22%,transparent_75%)] opacity-80 sm:opacity-100 motion-safe:animate-hero-grid-drift motion-reduce:animate-none"
+        />
+        <div className="absolute top-[8%] -left-[8%] h-[min(28rem,55vw)] w-[min(28rem,55vw)] rounded-full bg-primary-400/50 blur-3xl motion-safe:animate-hero-blob motion-reduce:animate-none will-change-transform" />
+        <div className="absolute top-[22%] -right-[12%] h-[min(26rem,50vw)] w-[min(26rem,50vw)] rounded-full bg-accent-400/45 blur-3xl motion-safe:animate-hero-blob-reverse motion-safe:[animation-delay:-4s] motion-reduce:animate-none will-change-transform" />
+        <div className="absolute -bottom-[10%] left-[10%] h-[min(22rem,45vw)] w-[min(22rem,45vw)] rounded-full bg-secondary-400/40 blur-3xl motion-safe:animate-hero-blob-slow motion-safe:[animation-delay:-9s] motion-reduce:animate-none will-change-transform" />
+        <div className="absolute left-1/2 top-[42%] -translate-x-1/2 -translate-y-1/2 flex items-center justify-center">
+          <div className="h-[min(36rem,85vw)] w-[min(52rem,120vw)] rounded-full bg-gradient-to-tr from-primary-300/50 via-accent-200/40 to-secondary-300/45 blur-[80px] md:blur-[100px] motion-safe:animate-hero-pulse-glow motion-reduce:animate-none will-change-transform" />
+        </div>
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-400/60 to-transparent" />
+      </div>
+
+      <div className="relative z-10 max-w-content mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
           {/* Left Column: Value Prop & CTAs */}
@@ -58,17 +82,8 @@ const Hero = () => {
               </button>
 
               <button
-                onClick={() => {
-                  const el = document.getElementById('restaurants');
-                  if (el) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('type', 'dinein');
-                    window.history.replaceState({}, '', url);
-                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  } else {
-                    navigate('/customer/home?type=dinein');
-                  }
-                }}
+                type="button"
+                onClick={() => navigate('/scan')}
                 className="inline-flex items-center justify-center px-6 py-3.5 border-2 border-neutral-300 text-neutral-700 font-semibold rounded-xl hover:border-primary-500 hover:text-primary-600 transition-colors">
                 <QrCode className="mr-2 w-5 h-5" />
                 Scan QR for dine‑in
@@ -147,8 +162,8 @@ const Hero = () => {
 
               {/* Floating Cards */}
               <div
-                className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-lg p-4 w-64 transform -rotate-2"
-                style={{ animationDelay: '400ms' }}
+                className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-lg p-4 w-64 motion-safe:animate-hero-card-float-left motion-reduce:-rotate-2"
+                style={{ animationDelay: '0.2s' }}
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-16 h-16 bg-neutral-200 rounded-lg overflow-hidden flex-shrink-0">
@@ -166,8 +181,7 @@ const Hero = () => {
               </div>
 
               <div
-                className="absolute -top-6 -right-6 bg-white rounded-xl shadow-lg p-4 w-64 transform rotate-2"
-                style={{ animationDelay: '600ms' }}
+                className="absolute -top-6 -right-6 bg-white rounded-xl shadow-lg p-4 w-64 motion-safe:animate-hero-card-float-right motion-safe:[animation-delay:0.6s] motion-reduce:rotate-2"
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-16 h-16 bg-neutral-200 rounded-lg overflow-hidden flex-shrink-0">

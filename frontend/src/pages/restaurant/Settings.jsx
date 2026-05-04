@@ -125,6 +125,7 @@ const Settings = () => {
 
   const tabs = [
     { id: 'profile',   label: 'Restaurant Profile', icon: <Building size={16} /> },
+    { id: 'branding',  label: 'Branding',           icon: <Upload size={16} /> },
     { id: 'payments',  label: 'Payment & Fees',      icon: <CreditCard size={16} /> },
     { id: 'support',   label: 'Support',             icon: <LifeBuoy size={16} /> },
   ];
@@ -285,67 +286,6 @@ const Settings = () => {
       case 'profile':
         return (
           <div className="space-y-8">
-            {/* Cover Image */}
-            <div>
-              <h3 className="text-lg font-semibold text-neutral-800 mb-4">Cover Image</h3>
-              <div className="relative group">
-                <div className="w-full h-48 bg-neutral-100 rounded-xl overflow-hidden border border-neutral-200">
-                  {coverLoading && (
-                    <div className="absolute inset-0 z-10 bg-black/20 flex items-center justify-center">
-                      <RefreshCw className="text-white animate-spin" size={32} />
-                    </div>
-                  )}
-                  {restaurantData.coverImage
-                    ? <img src={restaurantData.coverImage} alt="Cover" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400">
-                        <Building size={48} className="mb-2 opacity-20" />
-                        <p className="text-sm">Default cover being used</p>
-                      </div>
-                  }
-                </div>
-                <div className="absolute top-4 right-4">
-                  <input ref={coverInputRef} type="file" accept="image/*" className="hidden"
-                    onChange={(e) => handleImageUpload(e, 'cover')} />
-                  <button onClick={handleCoverClick}
-                    className="flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur shadow-sm border border-neutral-200 rounded-lg text-neutral-700 hover:bg-white transition-all font-medium">
-                    <Upload size={16} />
-                    {restaurantData.coverImage ? 'Change Cover' : 'Upload Cover'}
-                  </button>
-                </div>
-              </div>
-              <p className="text-sm text-neutral-500 mt-2">Recommended: 1600 × 400px.</p>
-            </div>
-
-            {/* Logo */}
-            <div>
-              <h3 className="text-lg font-semibold text-neutral-800 mb-4">Restaurant Logo</h3>
-              <div className="flex items-start gap-6">
-                <div className="relative w-32 h-32 bg-neutral-100 rounded-xl overflow-hidden border border-neutral-200">
-                  {logoLoading && (
-                    <div className="absolute inset-0 z-10 bg-black/20 flex items-center justify-center">
-                      <RefreshCw className="text-white animate-spin" size={24} />
-                    </div>
-                  )}
-                  {restaurantData.logo
-                    ? <img src={restaurantData.logo} alt="Logo" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center">
-                        <Building size={32} className="text-neutral-400" />
-                      </div>
-                  }
-                </div>
-                <div>
-                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
-                    onChange={(e) => handleImageUpload(e, 'logo')} />
-                  <button onClick={handleUploadClick}
-                    className="px-4 py-2 border border-neutral-300 rounded-lg hover:bg-neutral-50 flex items-center gap-2 mb-2 font-medium">
-                    <Upload size={16} />
-                    {restaurantData.logo ? 'Change Logo' : 'Upload Logo'}
-                  </button>
-                  <p className="text-sm text-neutral-500">Recommended: 400 × 400px, PNG or JPG</p>
-                </div>
-              </div>
-            </div>
-
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-2">Restaurant Name</label>
@@ -438,6 +378,97 @@ const Settings = () => {
               {saving ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
+          </div>
+        );
+
+      // ── Branding ───────────────────────────────────────────────────────────
+      case 'branding':
+        return (
+          <div className="space-y-8">
+            <div>
+              <h3 className="text-xl font-bold text-neutral-800">Branding</h3>
+              <p className="text-sm text-neutral-500 mt-1">Upload your restaurant's logo and cover image to stand out to customers.</p>
+            </div>
+
+            {/* Cover Image */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-semibold text-neutral-700 uppercase tracking-wider">Cover Image</h4>
+              <div className="relative group">
+                <div className="w-full h-56 bg-neutral-50 border-2 border-dashed border-neutral-200 rounded-2xl overflow-hidden transition-all group-hover:border-primary/40">
+                  {coverLoading && (
+                    <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-sm flex items-center justify-center">
+                      <RefreshCw className="text-primary animate-spin" size={32} />
+                    </div>
+                  )}
+                  {restaurantData.coverImage
+                    ? <img src={restaurantData.coverImage} alt="Cover" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400">
+                        <Upload size={48} className="mb-2 opacity-20" />
+                        <p className="text-sm font-medium">No cover image uploaded</p>
+                        <p className="text-xs mt-1">Default background will be shown to customers</p>
+                      </div>
+                  }
+                </div>
+                <div className="absolute top-4 right-4">
+                  <input ref={coverInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={(e) => handleImageUpload(e, 'cover')} />
+                  <button onClick={handleCoverClick}
+                    className="flex items-center gap-2 px-4 py-2 bg-white shadow-md border border-neutral-200 rounded-xl text-neutral-700 hover:bg-neutral-50 transition-all font-bold text-sm">
+                    <Upload size={16} />
+                    {restaurantData.coverImage ? 'Change Cover' : 'Upload Cover'}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 text-xs">
+                <Info size={14} className="mt-0.5 flex-shrink-0" />
+                <span>Recommended size: 1600 × 400px. High-quality landscape images work best.</span>
+              </div>
+            </div>
+
+            {/* Logo */}
+            <div className="space-y-4 pt-4 border-t border-neutral-100">
+              <h4 className="text-sm font-semibold text-neutral-700 uppercase tracking-wider">Restaurant Logo</h4>
+              <div className="flex items-center gap-8">
+                <div className="relative w-32 h-32 bg-neutral-50 border-2 border-dashed border-neutral-200 rounded-2xl overflow-hidden transition-all hover:border-primary/40">
+                  {logoLoading && (
+                    <div className="absolute inset-0 z-10 bg-white/60 backdrop-blur-sm flex items-center justify-center">
+                      <RefreshCw className="text-primary animate-spin" size={24} />
+                    </div>
+                  )}
+                  {restaurantData.logo
+                    ? <img src={restaurantData.logo} alt="Logo" className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center">
+                        <Building size={32} className="text-neutral-300" />
+                      </div>
+                  }
+                  <input ref={fileInputRef} type="file" accept="image/*" className="hidden"
+                    onChange={(e) => handleImageUpload(e, 'logo')} />
+                  <button 
+                    onClick={handleUploadClick}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    title="Change Logo"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <button onClick={handleUploadClick}
+                    className="px-4 py-2 bg-white border border-neutral-300 rounded-xl hover:bg-neutral-50 flex items-center gap-2 font-bold text-sm transition-all">
+                    <Upload size={16} />
+                    {restaurantData.logo ? 'Change Logo' : 'Upload Logo'}
+                  </button>
+                  <p className="text-xs text-neutral-500 max-w-xs">
+                    Recommended: 400 × 400px square image. PNG with transparency or JPG works great.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-neutral-100">
+              <button onClick={handleSave} disabled={saving}
+                className="px-8 py-3 bg-primary text-white rounded-xl hover:bg-primary/90 flex items-center gap-2 disabled:opacity-60 font-bold transition-all shadow-lg shadow-primary/20">
+                {saving ? <RefreshCw size={18} className="animate-spin" /> : <Save size={18} />}
+                {saving ? 'Saving Branding...' : 'Save Branding Changes'}
+              </button>
+            </div>
           </div>
         );
 

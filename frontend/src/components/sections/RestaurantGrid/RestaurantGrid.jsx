@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef, useCallback } from 'react';
-import { Star, Clock, MapPin, Check, Truck, Package, Utensils } from 'lucide-react';
+import { Star, Clock, MapPin, Check, Truck, Package, Utensils, Sparkles } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { restaurantService } from '../../../services/restaurant.service';
 import { checkIsClosed } from '../../../utils/restaurantUtils';
@@ -17,6 +17,23 @@ const RestaurantGrid = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
+  const hasMoreRef = useRef(hasMore);
+  const showMapViewRef = useRef(showMapView);
+  const isLoadingRef = useRef(isLoading);
+  const isFetchingMoreRef = useRef(isFetchingMore);
+  useEffect(() => {
+    hasMoreRef.current = hasMore;
+  }, [hasMore]);
+  useEffect(() => {
+    showMapViewRef.current = showMapView;
+  }, [showMapView]);
+  useEffect(() => {
+    isLoadingRef.current = isLoading;
+  }, [isLoading]);
+  useEffect(() => {
+    isFetchingMoreRef.current = isFetchingMore;
+  }, [isFetchingMore]);
+
   const params = useMemo(() => {
     const sp = new URLSearchParams(location.search);
     const search = sp.get('search') || '';
@@ -26,22 +43,62 @@ const RestaurantGrid = () => {
     return { search, cuisine, type, sort };
   }, [location.search]);
 
-  // Observer for Infinite Scroll
-  const observer = useRef();
-  const lastRestaurantElementRef = useCallback(node => {
-    if (isLoading || isFetchingMore) return;
-    if (observer.current) observer.current.disconnect();
-    
-    observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !showMapView) {
-        setPage(prevPage => prevPage + 1);
+  // Sentinel-based infinite scroll (ref on Link is unreliable; observer needs fresh hasMore)
+  const observer = useRef(null);
+  const loadMoreSentinelRef = useCallback((node) => {
+    if (observer.current) {
+      observer.current.disconnect();
+      observer.current = null;
+    }
+    if (!node) return;
+
+    observer.current = new IntersectionObserver(
+      (entries) => {
+        const hit = entries[0]?.isIntersecting;
+        if (
+          !hit ||
+          !hasMoreRef.current ||
+          showMapViewRef.current ||
+          isLoadingRef.current ||
+          isFetchingMoreRef.current
+        ) {
+          return;
+        }
+        setPage((p) => p + 1);
+      },
+      { root: null, rootMargin: '320px', threshold: 0 }
+    );
+    observer.current.observe(node);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (observer.current) {
+        observer.current.disconnect();
+        observer.current = null;
       }
-    });
-    
-    if (node) observer.current.observe(node);
-  }, [isLoading, isFetchingMore, hasMore, showMapView]);
+    },
+    []
+  );
 
   const fetchIdRef = useRef(0);
+
+  /** Open venues first, then apply the active sort within each group. */
+  const buildRestaurantComparator = useCallback((sortKey) => (a, b) => {
+    if (a.isClosed && !b.isClosed) return 1;
+    if (!a.isClosed && b.isClosed) return -1;
+    switch (sortKey) {
+      case 'rating':
+        return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+      case 'fastest':
+        return (a.prepTime ?? 20) - (b.prepTime ?? 20);
+      case 'price':
+        return (a.deliveryFeeNum ?? 0) - (b.deliveryFeeNum ?? 0);
+      case 'recommended':
+      default:
+        return 0;
+    }
+  }, []);
 
   const loadRestaurants = useCallback(async (currentPage, currentParams) => {
     const fetchId = ++fetchIdRef.current;
@@ -63,14 +120,29 @@ const RestaurantGrid = () => {
       if (fetchId !== fetchIdRef.current) return; // Stale request
 
       const list = res.data || [];
-      setHasMore(currentPage < (res.pages || 1));
+      const limitNum = query.limit;
+      const total = Number(res.total);
+      const pagesFromApi = Number(res.pages);
+
+      let more = false;
+      if (Number.isFinite(total) && total >= 0) {
+        more = currentPage * limitNum < total;
+      } else if (Number.isFinite(pagesFromApi) && pagesFromApi > 0) {
+        more = currentPage < pagesFromApi;
+      } else {
+        more = list.length >= limitNum;
+      }
+      setHasMore(more && list.length > 0);
       
+      const cmp = buildRestaurantComparator(currentParams.sort);
       const mapped = list.map(r => ({
         id: r.id,
         name: r.name,
         cuisine: r.cuisineTypes || [],
         rating: r.rating || 0,
         reviewCount: r.reviewCount || 0,
+        prepTime: r.prepTime ?? 20,
+        deliveryFeeNum: Number(r.deliveryFee) || 0,
         deliveryTime: `${r.prepTime || 20}-${(r.prepTime || 20) + 10} min`,
         pickupTime: `${Math.max(5, (r.prepTime || 20) - 10)}-${r.prepTime || 20} min`,
         deliveryFee: r.deliveryFee ? `PKR ${Math.round(r.deliveryFee)}` : 'PKR 0',
@@ -83,18 +155,19 @@ const RestaurantGrid = () => {
         ].filter(Boolean),
         promoted: r.promoted || false,
         isClosed: checkIsClosed(r)
-      })).sort((a, b) => {
-        if (a.isClosed && !b.isClosed) return 1;
-        if (!a.isClosed && b.isClosed) return -1;
-        return 0;
+      })).sort(cmp);
+
+      setRestaurants((prev) => {
+        if (currentPage === 1) return mapped;
+        return [...prev, ...mapped].sort(cmp);
       });
-      
-      setRestaurants(prev => currentPage === 1 ? mapped : [...prev, ...mapped]);
     } catch (e) {
-      console.error(e);
+      if (import.meta.env.DEV) {
+        console.warn('Restaurant list request failed:', e?.response?.data?.message || e.message);
+      }
       if (fetchId !== fetchIdRef.current) return;
       if (currentPage === 1) {
-        setError('Failed to load restaurants');
+        setError(e?.response?.data?.message || 'Failed to load restaurants');
         setRestaurants([]);
       }
     } finally {
@@ -103,7 +176,7 @@ const RestaurantGrid = () => {
         setIsFetchingMore(false);
       }
     }
-  }, []);
+  }, [buildRestaurantComparator]);
 
   // Use Effect for initial load on params change
   useEffect(() => {
@@ -178,11 +251,8 @@ const RestaurantGrid = () => {
         ) : restaurants.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {!showMapView ? restaurants.map((restaurant, index) => {
-                const isLast = index === restaurants.length - 1;
-                return (
+              {!showMapView ? restaurants.map((restaurant) => (
                 <Link
-                  ref={isLast ? lastRestaurantElementRef : null}
                   to={`/customer/restaurant/${restaurant.id}`}
                   key={restaurant.id}
                   className="group bg-white border border-neutral-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-xl transition-all duration-300"
@@ -211,9 +281,10 @@ const RestaurantGrid = () => {
 
                     {/* Promoted Badge */}
                     {restaurant.promoted && (
-                      <div className="absolute top-3 left-3">
-                        <span className="px-2.5 py-1 bg-gradient-to-r from-primary-600 to-accent-500 text-white text-xs font-semibold rounded-full">
-                          PROMOTED
+                      <div className="absolute top-3 left-3 z-10">
+                        <span className="px-3 py-1 bg-gradient-to-r from-primary-600 to-accent-500 text-white text-[10px] font-black rounded-lg shadow-lg flex items-center gap-1 uppercase tracking-wider">
+                          <Sparkles className="w-3 h-3" />
+                          Promoted
                         </span>
                       </div>
                     )}
@@ -290,13 +361,20 @@ const RestaurantGrid = () => {
                     </div>
                   </div>
                 </Link>
-                );
-              }) : (
+              )) : (
                 <div className="col-span-full">
                   <MapView restaurants={restaurants} />
                 </div>
               )}
             </div>
+
+            {!showMapView && hasMore && restaurants.length > 0 && (
+              <div
+                ref={loadMoreSentinelRef}
+                className="w-full min-h-[64px] flex items-center justify-center"
+                aria-hidden
+              />
+            )}
             
             {/* Infinite Scroll Loading State */}
             {isFetchingMore && (

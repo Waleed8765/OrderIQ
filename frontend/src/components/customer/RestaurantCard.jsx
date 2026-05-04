@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Clock, Truck, Package, Utensils, Heart } from 'lucide-react';
+import { Star, Clock, Truck, Package, Utensils, Heart, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useFavorites } from '../../features/customer/FavoritesContext';
 import { useAuth } from '../../features/auth/AuthContext';
@@ -18,13 +18,14 @@ const RestaurantCard = ({ restaurant, mode = 'delivery' }) => {
   const {
     name,
     rating,
-    cuisines,
+    cuisines = [],
     deliveryTime,
     pickupTime,
     deliveryFee,
     priceRange,
     image,
     promoted,
+    aiReason,
     isClosed,
     delivery,
     takeaway,
@@ -64,9 +65,10 @@ const RestaurantCard = ({ restaurant, mode = 'delivery' }) => {
 
         {/* Promoted Badge */}
         {promoted && (
-          <div className="absolute top-3 left-3">
-            <span className="px-2.5 py-1 bg-gradient-to-r from-primary-600 to-accent-500 text-white text-xs font-semibold rounded-full">
-              PROMOTED
+          <div className="absolute top-3 left-3 z-10">
+            <span className="px-3 py-1 bg-gradient-to-r from-primary-600 to-accent-500 text-white text-[10px] font-black rounded-lg shadow-lg flex items-center gap-1 uppercase tracking-wider">
+              <Sparkles className="w-3 h-3" />
+              Promoted
             </span>
           </div>
         )}
@@ -146,6 +148,13 @@ const RestaurantCard = ({ restaurant, mode = 'delivery' }) => {
             {dineIn && <Utensils className="w-4 h-4 hover:text-gray-700" />}
           </div>
         </div>
+
+        {aiReason && (
+          <div className="mt-3 flex items-start gap-2 rounded-lg bg-primary-50 border border-primary-100 p-2">
+            <Sparkles className="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-primary-800 line-clamp-2">{aiReason}</p>
+          </div>
+        )}
       </div>
     </Link>
   );

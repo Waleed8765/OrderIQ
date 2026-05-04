@@ -9,18 +9,37 @@ export const checkIsClosed = (restaurant) => {
   // 1. Check operational status
   if (restaurant.status !== 'OPEN') return true;
   
-  // 2. Check time-based availability
-  if (!restaurant.openingTime || !restaurant.closingTime) return false;
+  const now = new Date();
+  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const todayName = daysOfWeek[now.getDay()];
 
+  // 2. Check day-specific schedule if available
+  if (restaurant.schedule && typeof restaurant.schedule === 'object') {
+    const todaySchedule = restaurant.schedule[todayName];
+    if (todaySchedule) {
+      if (todaySchedule.closed) return true;
+      if (todaySchedule.open && todaySchedule.close) {
+        return isTimeClosed(todaySchedule.open, todaySchedule.close);
+      }
+    }
+  }
+
+  // 3. Fallback to global opening/closing times
+  if (!restaurant.openingTime || !restaurant.closingTime) return false;
+  return isTimeClosed(restaurant.openingTime, restaurant.closingTime);
+};
+
+/**
+ * Helper to check if current time is outside the open-close range.
+ */
+const isTimeClosed = (openTime, closeTime) => {
   const parseTime = (timeStr) => {
     if (!timeStr) return null;
     
-    // Normalizing time string (handle cases like "08:00 AM", "8:00pm", "20:00")
     const cleaned = timeStr.trim().toLowerCase();
     const isPM = cleaned.includes('pm');
     const isAM = cleaned.includes('am');
     
-    // Remove AM/PM for numerical parsing
     const timeOnly = cleaned.replace(/[ap]m/g, '').trim();
     let [hours, minutes] = timeOnly.split(':');
     
@@ -38,17 +57,14 @@ export const checkIsClosed = (restaurant) => {
   const now = new Date();
   const currentMins = now.getHours() * 60 + now.getMinutes();
   
-  const openMins = parseTime(restaurant.openingTime);
-  const closeMins = parseTime(restaurant.closingTime);
+  const openMins = parseTime(openTime);
+  const closeMins = parseTime(closeTime);
 
   if (openMins === null || closeMins === null) return false;
 
-  // Handle overnight opening (e.g., 6:00 PM to 2:00 AM)
   if (openMins <= closeMins) {
-    // Normal case (e.g., 9:00 AM to 10:00 PM)
     return currentMins < openMins || currentMins > closeMins;
   } else {
-    // Overnight case
     return currentMins > closeMins && currentMins < openMins;
   }
 };

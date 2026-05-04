@@ -7,7 +7,7 @@ const {
     getMyRestaurants
 } = require('../controllers/restaurantController');
 const { getPaymentSettings, updatePaymentSettings } = require('../controllers/paymentSettingsController');
-const { protect, authorize } = require('../middleware/auth');
+const { protect, authorize, optionalProtect } = require('../middleware/auth');
 
 // We also need to map nested menu, team & table routing 
 const menuRouter = require('./menu');
@@ -26,7 +26,7 @@ router.use('/:restaurantId/reviews', reviewRouter);
 
 router
     .route('/')
-    .get(getRestaurants)
+    .get(optionalProtect, getRestaurants)
     .post(protect, authorize('RESTAURANT_OWNER', 'ADMIN'), createRestaurant);
 
 router.route('/mine').get(protect, authorize('RESTAURANT_OWNER', 'ADMIN'), getMyRestaurants);

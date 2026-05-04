@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Lock, Store, MapPin, Clock, Check, Loader, ChevronLeft, ArrowRight } from 'lucide-react';
+import { User, Mail, Phone, Lock, Store, MapPin, Clock, Check, Loader, ChevronLeft, ArrowRight, Upload, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { registerUser } from '../../services/auth.service';
 import { restaurantService } from '../../services/restaurant.service';
+import { uploadService } from '../../services/upload.service';
 import { useAuth } from '../../features/auth/AuthContext';
 
 const RestaurantSignup = () => {
@@ -11,6 +12,8 @@ const RestaurantSignup = () => {
     const { checkAuth } = useAuth();
     const [step, setStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
+    const [logoLoading, setLogoLoading] = useState(false);
+    const [coverLoading, setCoverLoading] = useState(false);
     const [errors, setErrors] = useState({});
     const [formData, setFormData] = useState({
         ownerName: '',
@@ -28,8 +31,35 @@ const RestaurantSignup = () => {
         closingTime: '22:00',
         dineIn: true,
         takeaway: true,
-        delivery: true
+        delivery: true,
+        logo: '',
+        coverImage: ''
     });
+
+    const handleImageUpload = async (e, type) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        if (file.size > 2 * 1024 * 1024) {
+            toast.error('Image size must be less than 2MB');
+            return;
+        }
+
+        const setLoading = type === 'logo' ? setLogoLoading : setCoverLoading;
+        const field = type === 'logo' ? 'logo' : 'coverImage';
+
+        try {
+            setLoading(true);
+            const { url } = await uploadService.uploadImage(file);
+            updateField(field, url);
+            toast.success(`${type === 'logo' ? 'Logo' : 'Cover image'} uploaded!`);
+        } catch (err) {
+            toast.error('Failed to upload image');
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const updateField = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -117,6 +147,8 @@ const RestaurantSignup = () => {
                 dineIn: formData.dineIn,
                 takeaway: formData.takeaway,
                 delivery: formData.delivery,
+                logo: formData.logo,
+                coverImage: formData.coverImage,
                 status: 'OPEN',
             });
 
@@ -246,6 +278,69 @@ const RestaurantSignup = () => {
                         {step === 2 && (
                             <div className="space-y-5">
                                 <h3 className="text-2xl font-bold text-gray-900 mb-6">Restaurant Information</h3>
+                                
+                                {/* Branding Section */}
+                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pb-4 border-b border-gray-100">
+                                     {/* Logo Upload */}
+                                     <div>
+                                         <label className="block text-sm font-bold text-gray-700 mb-2">
+                                             Restaurant Logo <span className="text-[10px] font-normal text-gray-400 ml-1">(Optional)</span>
+                                         </label>
+                                         <div className="relative group">
+                                             <div className="w-24 h-24 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-400">
+                                                 {logoLoading ? (
+                                                     <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
+                                                 ) : formData.logo ? (
+                                                     <img src={formData.logo} alt="Logo" className="w-full h-full object-cover" />
+                                                 ) : (
+                                                     <div className="text-center">
+                                                         <Upload className="w-6 h-6 text-gray-300 mx-auto" />
+                                                         <span className="text-[10px] text-gray-400 mt-1 block">Add logo</span>
+                                                     </div>
+                                                 )}
+                                             </div>
+                                             <input 
+                                                 type="file" 
+                                                 accept="image/*" 
+                                                 className="absolute inset-0 opacity-0 cursor-pointer"
+                                                 onChange={(e) => handleImageUpload(e, 'logo')}
+                                             />
+                                         </div>
+                                         <p className="text-[10px] text-gray-400 mt-1">400x400px recommended</p>
+                                     </div>
+ 
+                                     {/* Cover Upload */}
+                                     <div>
+                                         <label className="block text-sm font-bold text-gray-700 mb-2">
+                                             Cover Image <span className="text-[10px] font-normal text-gray-400 ml-1">(Optional)</span>
+                                         </label>
+                                         <div className="relative group">
+                                             <div className="w-full h-24 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl flex items-center justify-center overflow-hidden transition-all group-hover:border-blue-400">
+                                                 {coverLoading ? (
+                                                     <RefreshCw className="w-6 h-6 text-blue-500 animate-spin" />
+                                                 ) : formData.coverImage ? (
+                                                     <img src={formData.coverImage} alt="Cover" className="w-full h-full object-cover" />
+                                                 ) : (
+                                                     <div className="text-center">
+                                                         <Upload className="w-6 h-6 text-gray-300 mx-auto" />
+                                                         <span className="text-[10px] text-gray-400 mt-1 block">Add cover</span>
+                                                     </div>
+                                                 )}
+                                             </div>
+                                             <input 
+                                                 type="file" 
+                                                 accept="image/*" 
+                                                 className="absolute inset-0 opacity-0 cursor-pointer"
+                                                 onChange={(e) => handleImageUpload(e, 'cover')}
+                                             />
+                                         </div>
+                                         <p className="text-[10px] text-gray-400 mt-1">1200x400px recommended</p>
+                                     </div>
+                                 </div>
+                                 <p className="text-[11px] text-blue-600 bg-blue-50 p-2 rounded-lg mb-4">
+                                     💡 You can skip branding for now and set it later from your dashboard settings.
+                                 </p>
+
                                 <div>
                                     <label className="block text-sm font-bold text-gray-700 mb-2">Restaurant Name</label>
                                     <input required type="text" value={formData.restaurantName} onChange={(e) => updateField('restaurantName', e.target.value)} className="w-full px-4 py-3.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none bg-gray-50 focus:bg-white" placeholder="Your Restaurant Name" />

@@ -24,18 +24,35 @@ function getGroqClient() {
  * @returns {Promise<string>} - The assistant's response text
  */
 async function chatCompletion(messages) {
-  // Try Groq first
+  const { content } = await chatCompletionWithMeta(messages);
+  return content;
+}
+
+/**
+ * Same routing as chatCompletion (Groq → Ollama), but reports which provider responded.
+ * @returns {{ content: string, provider: 'groq' | 'ollama', model: string }}
+ */
+async function chatCompletionWithMeta(messages) {
   const groq = getGroqClient();
   if (groq) {
     try {
-      return await groqCompletion(groq, messages);
+      const content = await groqCompletion(groq, messages);
+      return {
+        content,
+        provider: 'groq',
+        model: ragConfig.llm.primary.model,
+      };
     } catch (error) {
       console.warn('[RAG] Groq API failed, falling back to Ollama:', error.message);
     }
   }
 
-  // Fallback to Ollama
-  return ollamaCompletion(messages);
+  const content = await ollamaCompletion(messages);
+  return {
+    content,
+    provider: 'ollama',
+    model: ragConfig.llm.fallback.model,
+  };
 }
 
 /**
@@ -159,4 +176,4 @@ async function ollamaCompletionStream(messages, onChunk) {
   return fullResponse;
 }
 
-module.exports = { chatCompletion, chatCompletionStream };
+module.exports = { chatCompletion, chatCompletionStream, chatCompletionWithMeta };
