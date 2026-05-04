@@ -1,398 +1,159 @@
 # OrderIQ
-
-**OrderIQ** is a full-stack food ordering platform that connects customers, restaurant owners, and administrators in real-time. Built with a modern React frontend and a Node.js/Express backend, it supports live order tracking via Socket.io, Firebase authentication, Cloudinary image uploads, a PostgreSQL database managed through Prisma, and an **AI-powered RAG Chat Assistant** for intelligent food recommendations.
-
----
-
-## Architecture Overview
-
-```
-orderiq/
-├── frontend/          # React (Vite) — Customer, Restaurant, Admin UIs
-└── backend/           # Node.js (Express) — REST API + Socket.io server
-```
-
-### Tech Stack
-
-| Layer               | Technology                                                   |
-| ------------------- | ------------------------------------------------------------ |
-| **Frontend**        | React 19, Vite, Tailwind CSS, Framer Motion, React Router v7 |
-| **State / Context** | React Context API (Auth, Cart, Restaurant, Admin)            |
-| **Real-time**       | Socket.io Client                                             |
-| **Auth**            | Firebase Authentication                                      |
-| **HTTP Client**     | Axios                                                        |
-| **UI Extras**       | Lucide React, Headless UI, React Hot Toast                   |
-| **Backend**         | Node.js, Express 5                                           |
-| **Database**        | PostgreSQL (hosted on Supabase) via Prisma ORM + **pgvector** |
-| **Auth (Server)**   | Firebase Admin SDK                                           |
-| **Image Uploads**   | Cloudinary + Multer                                          |
-| **Real-time**       | Socket.io                                                    |
-| **AI / RAG**        | Ollama (local embeddings + LLM), Groq API (optional)         |
-| **Embeddings**      | `nomic-embed-text` (768-dim vectors via Ollama)              |
-| **LLM**             | Groq `llama-3.3-70b` (primary) / Ollama `gemma3:1b` (fallback) |
-| **Vector Store**    | pgvector (inside existing PostgreSQL)                        |
-| **Security**        | Helmet, express-rate-limit, CORS                             |
-| **Logging**         | Morgan                                                       |
-| **Email**           | Nodemailer                                                   |
-
----
-
-## Features
-
+OrderIQ is a full-stack food ordering platform with three roles: **Customer**, **Restaurant Owner**, and **Admin**.  
+It includes real-time order tracking, QR dine-in ordering, AI recommendations, and an AI chat assistant (RAG).
+## Tech Stack
+- Frontend: React 19, Vite, Tailwind CSS, React Router v7, Context API
+- Backend: Node.js, Express 5, Socket.io
+- Database: PostgreSQL (Supabase) + Prisma
+- Auth: Firebase Authentication + Firebase Admin SDK
+- Media: Cloudinary + Multer
+- AI: Groq (primary), Ollama (fallback), local RAG module
+## Core Features
 ### Customer
-- Browse restaurants by cuisine, area, and service type
-- Real-time restaurant details and menu browsing
-- Scan QR codes at restaurant tables to instantly access digital menus
-- Cart management with Delivery, Pickup, and localized Dine-in table mapping
-- Live order tracking with Socket.io
-- Saved addresses, favorites, rewards points, and referral codes
-- Firebase-authenticated profile and settings
-
+- Browse restaurants, menu items, and details
+- Cart and checkout flows (delivery, pickup, dine-in)
+- QR scan flow for table-specific dine-in ordering
+- Favorites, addresses, profile, rewards, referrals
+- Real-time order status tracking via Socket.io
+- AI restaurant recommendation endpoint integration
 ### Restaurant Owner
-- Secure restaurant dashboard (protected route)
-- Live orders panel with real-time status updates
-- Full menu management (categories + items, images via Cloudinary)
-- **QR Code Management**: Dynamically generate, manage, and print QR codes mapped to physical tables
-- Availability toggling and working hours
-- Team management (invite staff / managers)
-- Order history and analytics
-
+- Dashboard, live orders, order history, analytics
+- Menu and category management
+- Team management
+- Table and QR management
+- Availability management with day-specific schedule support
+- Branding management (logo + cover image), including optional upload during signup
 ### Admin
-- Admin-only protected dashboard
-- Manage all users, restaurants, orders, and campaigns
-- Platform-wide settings
-
-### QR Code Dine-in System 📸
-- **For Owners**: Create and customize unique QR codes for specific tables from the dashboard.
-- **For Customers**: Scanning the table's QR code routes directly to a specialized dining interface (`/menu/:restaurantId`).
-- **Seamless Ordering**: The order type automatically defaults to `DINEIN` and attaches the specific table number, bypassing the delivery fee logic and notifying the kitchen of the exact table locaton.
-
-### AI Chat Assistant (RAG)
-- Floating chat widget available on all pages
-- Intelligent food and restaurant recommendations powered by RAG
-- Semantic search — understands queries like "suggest a good burger place" or "what biryani options are available"
-- Real-time knowledge base — auto-syncs when restaurants or menus are updated
-- Markdown-formatted responses with ratings, locations, prices, and cuisine info
-- Groq API (70B model) for high-quality responses, with local Ollama fallback
-
----
-
-## Database Schema (Prisma)
-
-Models: `User` · `Restaurant` · `Category` · `MenuItem` · `Order` · `OrderItem` · `Address` · `TeamMember` · `Reward` · `Favorite`
-
-Key enums: `Role` · `OrderStatus` · `OrderType` · `PaymentMethod` · `RestaurantStatus`
-
-> See [`backend/prisma/schema.prisma`](./backend/prisma/schema.prisma) for the full schema.
-
----
-
-## RAG Pipeline (AI Chat Assistant)
-
-### How It Works
-
+- Dashboard with users/restaurants/orders views
+- Restaurant promotion management (promote/unpromote)
+- Restaurant and user status controls
+## Recent Implemented Updates
+- Admin promotions flow added (`/api/admin/restaurants/:id/promote`)
+- Promoted badge updated on customer-facing restaurant cards
+- Restaurant branding upload implemented in signup and settings
+- Availability now supports per-day schedule in UI and persists via `Restaurant.schedule` JSON field
+## Project Structure
+```text
+final-year-project/
++-- frontend/
+�   +-- src/
+�   �   +-- components/
+�   �   +-- features/
+�   �   +-- layouts/
+�   �   +-- pages/
+�   �   +-- services/
+�   �   +-- utils/
+�   +-- .env.example
+�   +-- package.json
++-- backend/
+�   +-- config/
+�   +-- controllers/
+�   +-- middleware/
+�   +-- prisma/
+�   �   +-- schema.prisma
+�   �   +-- migrations/
+�   +-- rag/
+�   +-- routes/
+�   +-- services/
+�   +-- tests/
+�   +-- .env.example
+�   +-- package.json
++-- package.json
++-- README.md
 ```
-User asks: "Suggest me a good burger place in Lahore"
-     │
-     ▼
-  1. Embed query → Ollama (nomic-embed-text) converts text to 768-dim vector
-     │
-     ▼
-  2. Vector search → pgvector finds top 8 most similar restaurants/items
-     │
-     ▼
-  3. Build prompt → System rules + retrieved data + conversation history + question
-     │
-     ▼
-  4. LLM generates → Groq API (or Ollama fallback) answers using ONLY retrieved data
-     │
-     ▼
-  5. Response → Formatted markdown sent to frontend chat widget
-```
-
-### Knowledge Base Auto-Sync
-
-When a restaurant or menu item is created/updated, the embedding is automatically regenerated and stored in pgvector. No manual re-indexing needed.
-
-### RAG Module Structure
-
-```
-backend/rag/
-├── config.js                    # LLM, embedding, and prompt configuration
-├── index.js                     # Module entry point
-├── controllers/
-│   └── chatController.js        # /api/chat endpoints
-├── routes/
-│   └── chatRoutes.js            # Express router
-├── services/
-│   ├── embeddingService.js      # Text → vector via Ollama
-│   ├── llmService.js            # Groq (primary) + Ollama (fallback)
-│   ├── vectorStoreService.js    # pgvector table, HNSW index, similarity search
-│   ├── ragPipeline.js           # Full RAG orchestration
-│   └── syncService.js           # Auto-sync embeddings on data changes
-└── scripts/
-    ├── seedData.js              # Seed sample restaurants + menu items
-    └── syncEmbeddings.js        # Generate embeddings for all existing data
-```
-
----
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js ≥ 18
-- A [Supabase](https://supabase.com) PostgreSQL project (or any PostgreSQL instance with pgvector)
-- A [Firebase](https://firebase.google.com) project (Auth enabled)
-- A [Cloudinary](https://cloudinary.com) account
-- [Ollama](https://ollama.com/download) installed (for AI Chat Assistant)
-
----
-
-### 1. Ollama Setup (AI Chat)
-
+## Database Models (Prisma)
+Main models include:
+- `User`
+- `Restaurant` (includes `promoted`, `prepTime`, and `schedule` JSON)
+- `Category`, `MenuItem`
+- `Order`, `OrderItem`
+- `Address`, `Favorite`, `Reward`, `Review`
+- `TeamMember`, `Table`
+- `RestaurantPaymentSettings`
+See full schema at `backend/prisma/schema.prisma`.
+## Environment Setup
+### Backend `.env`
+Use `backend/.env.example` as template.
+Required keys:
+- `PORT`
+- `DATABASE_URL`
+- `DIRECT_URL`
+- Firebase Admin keys (`FIREBASE_*`)
+- Cloudinary keys (`CLOUDINARY_*`)
+- AI config (`GROQ_*`, `OLLAMA_*`, recommendation tuning)
+### Frontend `.env`
+Use `frontend/.env.example` as template.
+Required keys:
+- `VITE_API_URL`
+- Firebase web keys (`VITE_FIREBASE_*`)
+## Local Development
+### 1. Install dependencies
+From project root:
 ```bash
-# Install Ollama from https://ollama.com/download, then:
-ollama pull nomic-embed-text    # Embedding model (~274 MB)
-ollama pull gemma3:1b           # Local LLM fallback (~815 MB)
+npm run install:all
 ```
-
-> **Important:** Ollama must be running before starting the backend. Open the Ollama app (macOS) or run `ollama serve`.
-
----
-
-### 2. Backend Setup
-
+Or install per app:
 ```bash
-cd backend
-npm install
+cd backend && npm install
+cd ../frontend && npm install
 ```
-
-Create a `.env` file in `backend/`:
-
-```env
-PORT=5002
-
-# PostgreSQL — Supabase connection pooler URL
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/postgres"
-
-# Firebase Admin SDK
-FIREBASE_PROJECT_ID="your-firebase-project-id"
-FIREBASE_CLIENT_EMAIL="your-service-account@your-project.iam.gserviceaccount.com"
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-
-# Cloudinary
-CLOUDINARY_CLOUD_NAME="your-cloud-name"
-CLOUDINARY_API_KEY="your-api-key"
-CLOUDINARY_API_SECRET="your-api-secret"
-
-# RAG / AI Chat Assistant + AI restaurant recommendations (Groq → local Ollama)
-GROQ_API_KEY="your-groq-api-key"          # Free at https://console.groq.com
-GROQ_MODEL="llama-3.3-70b-versatile"
-OLLAMA_BASE_URL="http://localhost:11434"
-OLLAMA_LLM_MODEL="gemma3:1b"
-
-# AI Recommendations (timeout / cache / candidate pool; LLM uses GROQ_* and OLLAMA_* above)
-AI_RECOMMENDATION_TIMEOUT_MS=8000
-AI_RECOMMENDATION_CANDIDATE_POOL=12
-AI_RECOMMENDATION_CACHE_TTL_MS=120000
-```
-
-Push the database schema:
-
+### 2. Prisma sync
+From `backend/`:
 ```bash
 npx prisma db push
+npx prisma generate
 ```
-
-Seed sample restaurant data and generate embeddings (for RAG):
-
+### 3. Optional AI local models (Ollama)
 ```bash
-node rag/scripts/seedData.js         # Seeds 10 restaurants + 49 menu items
-node rag/scripts/syncEmbeddings.js   # Generates vector embeddings (requires Ollama)
+ollama pull nomic-embed-text
+ollama pull gemma3:1b
 ```
-
-Start the backend:
-
-```bash
-npm run dev      # development (nodemon)
-npm start        # production
-```
-
-The API will be available at `http://localhost:5002`.
-
----
-
-### 3. Frontend Setup
-
-```bash
-cd frontend
-npm install
-```
-
-Create a `.env` file in `frontend/`:
-
-```env
-VITE_API_URL=http://localhost:5002/api
-
-# Firebase Web SDK
-VITE_FIREBASE_API_KEY=your-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
-VITE_FIREBASE_APP_ID=your-app-id
-```
-
-Start the frontend:
-
+### 4. Run app
+From root:
 ```bash
 npm run dev
 ```
-
-The app will be available at `http://localhost:5173`.
-
----
-
-## API Endpoints (Overview)
-
-| Prefix             | Description                                       |
-| ------------------ | ------------------------------------------------- |
-| `GET /api/health`  | Server health check                               |
-| `/api/auth`        | Registration, login, profile (`/me`)              |
-| `/api/restaurants` | List, create, update restaurants and menu         |
-| `/api/orders`      | Place, track, and manage orders                   |
-| `/api/users`       | User profile, addresses, favorites, rewards       |
-| `/api/admin`       | Admin-only: users, restaurants, orders, campaigns |
-| `/api/upload`      | Image upload to Cloudinary                        |
-| `/api/chat`        | AI Chat Assistant (RAG) — see below               |
-
-### Chat API Endpoints
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/chat` | Send a message, get AI response |
-| `POST` | `/api/chat/stream` | Stream response via Server-Sent Events |
-| `GET`  | `/api/chat/status` | Check RAG system health (embedding count, Ollama status) |
-
-**Request body** (`POST /api/chat`):
-```json
-{
-  "message": "Suggest me a good burger place in Lahore",
-  "conversationHistory": [],
-  "userContext": { "city": "Lahore" }
-}
+Or separate terminals:
+```bash
+npm run dev:backend
+npm run dev:frontend
 ```
-
----
-
-## Real-time Events (Socket.io)
-
-| Event                 | Direction           | Description                           |
-| --------------------- | ------------------- | ------------------------------------- |
-| `join_restaurant`     | Client → Server     | Join a restaurant's notification room |
-| `join_order`          | Client → Server     | Join an order tracking room           |
-| `newOrder`            | Server → Restaurant | Notify restaurant of a new order      |
-| `orderStatusUpdate`   | Server → Customer   | Broadcast order status change         |
-
----
-
-## Project Structure
-
+- Backend: `http://localhost:5002`
+- Frontend: `http://localhost:5173`
+## API Overview
+Base prefix: `/api`
+- `/auth` - authentication and profile
+- `/restaurants` - restaurants + nested menu/team/tables/reviews + payment settings
+- `/orders` - order lifecycle
+- `/users` - addresses/favorites/rewards/profile
+- `/admin` - admin dashboard and management (including promotions)
+- `/payments` - payment processing/status
+- `/recommendations` - personalized recommendations
+- `/upload` - image upload
+- `/chat` - RAG assistant endpoints
+## Socket Events
+- `join_restaurant` (client -> server)
+- `join_order` (client -> server)
+- `newOrder` (server -> restaurant room)
+- `orderStatusUpdate` (server -> customer room)
+## Testing
+From project root:
+```bash
+npm test
 ```
-frontend/src/
-├── components/         # Reusable UI components
-│   ├── auth/           # Login modal, protected routes
-│   ├── chat/           # ChatAssistant (AI chat widget)
-│   ├── customer/       # DishCard, RestaurantCard
-│   ├── layout/         # Navbar, Footer, CustomerLayout, DashboardSidebar
-│   ├── sections/       # Landing page sections (Hero, CTA, Features, etc.)
-│   └── ui/             # Button, Card, Drawer primitives
-├── features/           # React Context providers
-│   ├── auth/           # AuthContext (Firebase)
-│   ├── customer/       # CartContext
-│   ├── restaurant/     # RestaurantContext
-│   └── admin/          # AdminAuthContext, AdminFiltersContext
-├── layouts/            # AdminLayout, RestaurantLayout (with sidebar)
-├── pages/              # Route-level page components
-│   ├── LandingPage/
-│   ├── auth/           # RoleSelection, CustomerSignup, RestaurantSignup
-│   ├── customer/       # Home, RestaurantDetails, CartPage, OrderTracking, Profile, ...
-│   ├── restaurant/     # Dashboard, LiveOrders, MenuManagement, Analytics, ...
-│   └── admin/          # Dashboard, Users, Restaurants, Orders, Campaigns, Settings
-├── services/           # Axios service modules per domain (incl. chat.service.js)
-└── config/             # Firebase web config
-
-backend/
-├── config/             # db.js (Prisma client), firebase.js (Admin SDK)
-├── controllers/        # Business logic per domain
-├── middleware/         # auth.js (Firebase token verify), upload.js (multer)
-├── prisma/             # schema.prisma
-├── rag/                # RAG AI Chat Assistant module
-│   ├── config.js       # LLM, embedding, prompt settings
-│   ├── index.js        # Module entry point
-│   ├── controllers/    # chatController.js
-│   ├── routes/         # chatRoutes.js
-│   ├── services/       # embeddingService, llmService, vectorStoreService, ragPipeline, syncService
-│   └── scripts/        # seedData.js, syncEmbeddings.js
-├── routes/             # Express routers
-├── scripts/            # createAdmin.js (seed admin user)
-├── uploads/            # Runtime image uploads (gitignored)
-└── server.js           # Entry point
+Specific targets:
+```bash
+npm run test:backend
+npm run test:frontend
 ```
-
----
-
-## Creating an Admin User
-
-There is no admin registration UI. Use the seed script:
-
+Backend tests are in `backend/tests/` and validate API health and recommendation logic.
+## Useful Scripts
+### Create admin user
 ```bash
 cd backend
 node scripts/createAdmin.js
 ```
-
-Then log in at `/admin` with the credentials set in the script.
-
----
-
-## Startup Order
-
-```
-1. Open Ollama app         ← Must be running first (for AI Chat)
-2. npm run dev (backend)   ← Starts on port 5002
-3. npm run dev (frontend)  ← Starts on port 5173
-```
-
-> **Ollama must be running before the backend.** The RAG pipeline depends on it for embeddings and LLM inference. If Ollama isn't running, chat requests will fail with "Failed to process your message."
-
----
-
-## Build for Production
-
-```bash
-# Frontend
-cd frontend
-npm run build
-# Output: frontend/dist/
-
-# Backend — no build step required, deploy server.js directly
-```
-
----
-
-## Testing
-
-```bash
-# Run all tests from project root
-npm test
-
-# Run individual suites
-npm run test:backend
-npm run test:frontend
-```
-
----
-
-## License
-
-MIT — feel free to fork and build on this project.
+## Notes Before Pushing to GitHub
+- Keep `.env` files untracked
+- Commit Prisma schema/migration changes together
+- Run tests once before push
