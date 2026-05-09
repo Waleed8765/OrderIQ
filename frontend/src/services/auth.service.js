@@ -5,6 +5,7 @@ import {
     signInWithEmailAndPassword,
     signOut,
     updateProfile,
+    sendPasswordResetEmail,
     setPersistence,
     browserLocalPersistence,
     browserSessionPersistence
@@ -63,6 +64,35 @@ export const loginUser = async (email, password, rememberMe = false) => {
         return userCredential.user;
     } catch (error) {
         console.error("Login error", error);
+        throw error;
+    }
+};
+
+/**
+ * Send password reset email with custom redirect URL
+ */
+export const forgotPassword = async (email) => {
+    try {
+        const actionCodeSettings = {
+            url: window.location.origin + '/reset-password',
+            handleCodeInApp: true,
+        };
+        await sendPasswordResetEmail(auth, email, actionCodeSettings);
+    } catch (error) {
+        console.error("Forgot password error", error);
+        throw error;
+    }
+};
+
+/**
+ * Check if email exists in DB
+ */
+export const checkEmailExists = async (email) => {
+    try {
+        const response = await api.post('/auth/check-email', { email });
+        return response.data.exists;
+    } catch (error) {
+        console.error("Check email error", error);
         throw error;
     }
 };

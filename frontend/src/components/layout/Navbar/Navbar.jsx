@@ -3,6 +3,7 @@ import { Search, X, Filter, Menu as MenuIcon, ShoppingBag } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LoginModal from "../../auth/LoginModal";
 import ForgotPasswordModal from "../../auth/ForgotPasswordModal";
+import PasswordChangedModal from "../../auth/PasswordChangedModal";
 import { useAuth } from '../../../features/auth/AuthContext';
 
 const Navbar = () => {
@@ -14,6 +15,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [isPasswordChangedOpen, setIsPasswordChangedOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const searchRef = useRef(null);
@@ -110,13 +112,21 @@ const Navbar = () => {
 
   const handleOpenLogin = () => {
     setIsForgotOpen(false);
+    setIsPasswordChangedOpen(false);
     setIsLoginOpen(true);
     setMobileMenuOpen(false);
   };
 
   const handleOpenForgot = () => {
     setIsLoginOpen(false);
+    setIsPasswordChangedOpen(false);
     setIsForgotOpen(true);
+  };
+
+  const handleOpenPasswordChanged = () => {
+    setIsLoginOpen(false);
+    setIsForgotOpen(false);
+    setIsPasswordChangedOpen(true);
   };
 
   const loggedInAppLink = isAdmin
@@ -127,8 +137,18 @@ const Navbar = () => {
 
   useEffect(() => {
     const handleOpenLoginEvent = () => handleOpenLogin();
+    const handleOpenForgotEvent = () => handleOpenForgot();
+    const handleOpenPasswordChangedEvent = () => handleOpenPasswordChanged();
+    
     window.addEventListener('open-login', handleOpenLoginEvent);
-    return () => window.removeEventListener('open-login', handleOpenLoginEvent);
+    window.addEventListener('open-forgot', handleOpenForgotEvent);
+    window.addEventListener('open-password-changed', handleOpenPasswordChangedEvent);
+    
+    return () => {
+      window.removeEventListener('open-login', handleOpenLoginEvent);
+      window.removeEventListener('open-forgot', handleOpenForgotEvent);
+      window.removeEventListener('open-password-changed', handleOpenPasswordChangedEvent);
+    };
   }, []);
 
   // Hide this navbar on restaurant and admin dashboard pages
@@ -147,6 +167,14 @@ const Navbar = () => {
         isOpen={isForgotOpen}
         onClose={() => setIsForgotOpen(false)}
         onSwitchToLogin={handleOpenLogin}
+      />
+      <PasswordChangedModal
+        isOpen={isPasswordChangedOpen}
+        onClose={() => setIsPasswordChangedOpen(false)}
+        onLogin={() => {
+          setIsPasswordChangedOpen(false);
+          setIsLoginOpen(true);
+        }}
       />
 
       {/* Desktop Navigation */}

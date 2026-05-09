@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, ArrowLeft, Loader, CheckCircle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { forgotPassword, checkEmailExists } from '../../services/auth.service';
 
 const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }) => {
     const [email, setEmail] = useState('');
@@ -9,15 +10,29 @@ const ForgotPasswordModal = ({ isOpen, onClose, onSwitchToLogin }) => {
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setIsLoading(false);
+        try {
+            // 1. First check if the user exists in our DB
+            const exists = await checkEmailExists(email);
+            
+            if (!exists) {
+                toast.error('No account found with this email address');
+                setIsLoading(false);
+                return;
+            }
+
+            // 2. If exists, send Firebase reset email
+            await forgotPassword(email);
             setIsSent(true);
             toast.success('Reset link sent!');
-        }, 1500);
+        } catch (error) {
+            console.error('Reset error:', error);
+            toast.error('Failed to send reset link. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (

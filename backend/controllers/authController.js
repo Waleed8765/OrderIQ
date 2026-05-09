@@ -23,6 +23,32 @@ const generateUniqueReferralCode = async (fullName) => {
 };
 
 /**
+ * @desc    Check if an email is registered in the database
+ * @route   POST /api/auth/check-email
+ * @access  Public
+ */
+exports.checkEmail = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        const user = await prisma.user.findUnique({
+            where: { email: email.toLowerCase() }
+        });
+
+        res.status(200).json({ 
+            success: true, 
+            exists: !!user 
+        });
+    } catch (error) {
+        console.error('[AuthController] Check Email Error:', error);
+        res.status(500).json({ success: false, message: 'Server error checking email' });
+    }
+};
+
+/**
  * @desc    Register user in Postgres after Firebase signup
  * @route   POST /api/auth/register
  * @access  Public (But requires a valid Firebase ID Token in body or header)

@@ -1,5 +1,5 @@
 const express = require('express');
-const { register, getMe } = require('../controllers/authController');
+const { register, getMe, checkEmail } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -13,6 +13,7 @@ const router = express.Router();
  */
 
 router.post('/register', register);
+router.post('/check-email', checkEmail);
 
 // Protected routes
 router.get('/me', protect, getMe);

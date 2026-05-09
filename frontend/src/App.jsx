@@ -19,6 +19,7 @@ const LandingPage = lazy(() => import("./pages/LandingPage/LandingPage"));
 const RoleSelection = lazy(() => import("./pages/auth/RoleSelection"));
 const CustomerSignup = lazy(() => import("./pages/auth/CustomerSignup"));
 const RestaurantSignup = lazy(() => import("./pages/auth/RestaurantSignup"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 
 // Customer
 const CustomerHome = lazy(() => import("./pages/customer/Home"));
@@ -63,6 +64,7 @@ function App() {
           {/* Auth */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/scan" element={<QRScanPage />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/register" element={<RoleSelection />} />
         <Route path="/register/customer" element={<CustomerSignup />} />
         <Route path="/register/restaurant" element={<RestaurantSignup />} />
