@@ -383,7 +383,7 @@ const SEED_RESTAURANTS = [
     cuisineTypes: ['Pakistani', 'BBQ', 'Karahi'],
     description: 'Popular for its BBQ and karahi dishes. Known for generous portions and authentic taste.',
     address: 'Clifton Block 5',
-    city: 'Karachi',
+    city: 'Lahore',
     area: 'Clifton',
     openingTime: '12:00',
     closingTime: '00:00',
@@ -414,7 +414,7 @@ const SEED_RESTAURANTS = [
       {
         name: 'Rice',
         items: [
-          { name: 'Chicken Biryani', description: 'Authentic Karachi-style chicken biryani', price: 400 },
+          { name: 'Chicken Biryani', description: 'Authentic Lahore-style chicken biryani', price: 400 },
         ],
       },
     ],

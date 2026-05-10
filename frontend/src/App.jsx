@@ -15,6 +15,23 @@ import GlobalAuthModals from "./components/auth/GlobalAuthModals";
 // Lazy Imports
 const LandingPage = lazy(() => import("./pages/LandingPage/LandingPage"));
 
+// Public / Footer Pages
+const Discovery = lazy(() => import("./pages/public/Discovery"));
+const OrderTrackingInfo = lazy(() => import("./pages/public/OrderTrackingInfo"));
+const LoyaltyRewards = lazy(() => import("./pages/public/LoyaltyRewards"));
+const QRMenusInfo = lazy(() => import("./pages/public/QRMenusInfo"));
+const AboutUs = lazy(() => import("./pages/public/AboutUs"));
+const Careers = lazy(() => import("./pages/public/Careers"));
+const Blog = lazy(() => import("./pages/public/Blog"));
+const Press = lazy(() => import("./pages/public/Press"));
+const PartnerPortal = lazy(() => import("./pages/public/PartnerPortal"));
+const SupportCenter = lazy(() => import("./pages/public/SupportCenter"));
+const APIDocs = lazy(() => import("./pages/public/APIDocs"));
+const TermsOfService = lazy(() => import("./pages/public/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("./pages/public/PrivacyPolicy"));
+const CookiePolicy = lazy(() => import("./pages/public/CookiePolicy"));
+const DataProtection = lazy(() => import("./pages/public/DataProtection"));
+
 // Auth Pages
 const RoleSelection = lazy(() => import("./pages/auth/RoleSelection"));
 const CustomerSignup = lazy(() => import("./pages/auth/CustomerSignup"));
@@ -65,9 +82,26 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/scan" element={<QRScanPage />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/register" element={<RoleSelection />} />
-        <Route path="/register/customer" element={<CustomerSignup />} />
-        <Route path="/register/restaurant" element={<RestaurantSignup />} />
+          <Route path="/register" element={<RoleSelection />} />
+          <Route path="/register/customer" element={<CustomerSignup />} />
+          <Route path="/register/restaurant" element={<RestaurantSignup />} />
+
+          {/* Public / Footer Pages */}
+          <Route path="/discovery" element={<Discovery />} />
+          <Route path="/how-it-works/tracking" element={<OrderTrackingInfo />} />
+          <Route path="/loyalty" element={<LoyaltyRewards />} />
+          <Route path="/qr-menus" element={<QRMenusInfo />} />
+          <Route path="/about" element={<AboutUs />} />
+          <Route path="/careers" element={<Careers />} />
+          <Route path="/blog" element={<Blog />} />
+          <Route path="/press" element={<Press />} />
+          <Route path="/partner-portal" element={<PartnerPortal />} />
+          <Route path="/support" element={<SupportCenter />} />
+          <Route path="/api-docs" element={<APIDocs />} />
+          <Route path="/terms" element={<TermsOfService />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/cookies" element={<CookiePolicy />} />
+          <Route path="/data-protection" element={<DataProtection />} />
 
         {/*Customer Dashboard*/}
         <Route
