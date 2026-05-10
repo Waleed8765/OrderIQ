@@ -1,6 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
+import { adminService } from '../../services/admin.service';
+import { io } from 'socket.io-client';
+
+// Initialize Socket.IO client
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002/api';
+const SOCKET_URL = API_BASE_URL.replace('/api', '');
+const socket = io(SOCKET_URL, {
+  path: '/socket.io/'
+});
 
 const SettingsPage = () => {
     const [general, setGeneral] = useState({
@@ -24,11 +33,165 @@ const SettingsPage = () => {
         campaignUpdates: true,
         weeklyDigest: false,
     });
+    const [whatsapp, setWhatsapp] = useState({
+        whatsappEnabled: false,
+        whatsappPhoneNumber: '',
+        whatsappStatus: 'DISCONNECTED'
+    });
     const [statusMessage, setStatusMessage] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [qrDataUrl, setQrDataUrl] = useState(null);
+
+    const fetchWhatsAppSettings = async () => {
+        try {
+            const response = await adminService.getWhatsAppSettings();
+            if (response.success) {
+                setWhatsapp({
+                    ...response.data,
+                    whatsappPhoneNumber: response.data.whatsappPhoneNumber || ''
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching WhatsApp settings:', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchWhatsAppSettings();
+
+        // Socket.IO event listeners
+        const handleWhatsAppQr = (data) => {
+            if (data.qrDataUrl) {
+                setQrDataUrl(data.qrDataUrl);
+            }
+            setWhatsapp(prev => ({ ...prev, whatsappStatus: 'QR_REQUIRED' }));
+        };
+
+        const handleWhatsAppReady = () => {
+            setQrDataUrl(null);
+            setWhatsapp(prev => ({ ...prev, whatsappStatus: 'CONNECTED' }));
+        };
+
+        const handleWhatsAppError = (data) => {
+            setQrDataUrl(null);
+            setWhatsapp(prev => ({ ...prev, whatsappStatus: 'ERROR' }));
+        };
+
+        const handleWhatsAppDisconnected = () => {
+            setQrDataUrl(null);
+            setWhatsapp(prev => ({ ...prev, whatsappStatus: 'DISCONNECTED' }));
+        };
+
+        const handleSocketConnect = () => {
+            fetchWhatsAppSettings();
+        };
+
+        socket.on('connect', handleSocketConnect);
+        socket.on('whatsapp_qr', handleWhatsAppQr);
+        socket.on('whatsapp_ready', handleWhatsAppReady);
+        socket.on('whatsapp_error', handleWhatsAppError);
+        socket.on('whatsapp_disconnected', handleWhatsAppDisconnected);
+
+        // Cleanup
+        return () => {
+            socket.off('connect', handleSocketConnect);
+            socket.off('whatsapp_qr', handleWhatsAppQr);
+            socket.off('whatsapp_ready', handleWhatsAppReady);
+            socket.off('whatsapp_error', handleWhatsAppError);
+            socket.off('whatsapp_disconnected', handleWhatsAppDisconnected);
+        };
+    }, []);
 
     const handleSave = (section) => {
         setStatusMessage(`${section} settings saved`);
         window.setTimeout(() => setStatusMessage(''), 2000);
+    };
+
+    const handleSaveWhatsApp = async () => {
+        try {
+            setLoading(true);
+            const response = await adminService.updateWhatsAppSettings(whatsapp);
+            if (response.success) {
+                setWhatsapp({
+                    ...response.data,
+                    whatsappPhoneNumber: response.data.whatsappPhoneNumber || ''
+                });
+                setStatusMessage('WhatsApp settings saved');
+                window.setTimeout(() => setStatusMessage(''), 2000);
+            }
+        } catch (error) {
+            console.error('Error saving WhatsApp settings:', error);
+            setStatusMessage('Error saving WhatsApp settings');
+            window.setTimeout(() => setStatusMessage(''), 2000);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleStartWhatsApp = async () => {
+        try {
+            setLoading(true);
+            await adminService.startWhatsAppBot();
+            setStatusMessage('WhatsApp bot starting');
+            await fetchWhatsAppSettings();
+            window.setTimeout(() => setStatusMessage(''), 2000);
+        } catch (error) {
+            console.error('Error starting WhatsApp bot:', error);
+            setStatusMessage('Error starting WhatsApp bot');
+            await fetchWhatsAppSettings();
+            window.setTimeout(() => setStatusMessage(''), 2000);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleStopWhatsApp = async () => {
+        try {
+            setLoading(true);
+            await adminService.stopWhatsAppBot();
+            setStatusMessage('WhatsApp bot stopped');
+            await fetchWhatsAppSettings();
+            window.setTimeout(() => setStatusMessage(''), 2000);
+        } catch (error) {
+            console.error('Error stopping WhatsApp bot:', error);
+            setStatusMessage('Error stopping WhatsApp bot');
+            await fetchWhatsAppSettings();
+            window.setTimeout(() => setStatusMessage(''), 2000);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleResetWhatsAppSession = async () => {
+        try {
+            setLoading(true);
+            await adminService.resetWhatsAppSession();
+            setStatusMessage('WhatsApp session reset successfully');
+            await fetchWhatsAppSettings();
+            window.setTimeout(() => setStatusMessage(''), 2000);
+        } catch (error) {
+            console.error('Error resetting WhatsApp session:', error);
+            setStatusMessage('Error resetting WhatsApp session');
+            await fetchWhatsAppSettings();
+            window.setTimeout(() => setStatusMessage(''), 2000);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const getStatusBadge = (status) => {
+        const colors = {
+            DISCONNECTED: 'bg-gray-100 text-gray-800',
+            CONNECTING: 'bg-yellow-100 text-yellow-800',
+            QR_REQUIRED: 'bg-blue-100 text-blue-800',
+            CONNECTED: 'bg-green-100 text-green-800',
+            ERROR: 'bg-red-100 text-red-800'
+        };
+        return (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status] || colors.DISCONNECTED}`}>
+                {status}
+            </span>
+        );
     };
 
     return (
@@ -215,6 +378,86 @@ const SettingsPage = () => {
                             />
                         </label>
                     </div>
+                </Card>
+
+                <Card className="p-6 space-y-4 lg:col-span-2">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <h2 className="text-lg font-bold text-gray-900">WhatsApp Bot</h2>
+                            {getStatusBadge(whatsapp.whatsappStatus)}
+                        </div>
+                        <div className="flex gap-2">
+                            <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={handleSaveWhatsApp}
+                                disabled={loading}
+                            >
+                                Save
+                            </Button>
+                            <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={handleResetWhatsAppSession}
+                                disabled={loading}
+                            >
+                                Change Number
+                            </Button>
+                            {whatsapp.whatsappStatus === 'CONNECTED' ? (
+                                <Button 
+                                    size="sm" 
+                                    variant="destructive" 
+                                    onClick={handleStopWhatsApp}
+                                    disabled={loading}
+                                >
+                                    Stop Bot
+                                </Button>
+                            ) : (
+                                <Button 
+                                    size="sm" 
+                                    onClick={handleStartWhatsApp}
+                                    disabled={loading || !whatsapp.whatsappEnabled}
+                                >
+                                    Start Bot
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <label className="text-sm text-gray-600">
+                            Enable WhatsApp Bot
+                            <div className="mt-1">
+                                <input
+                                    type="checkbox"
+                                    checked={whatsapp.whatsappEnabled}
+                                    onChange={(event) => setWhatsapp(prev => ({ ...prev, whatsappEnabled: event.target.checked }))}
+                                    className="h-4 w-4"
+                                />
+                            </div>
+                        </label>
+                        <label className="text-sm text-gray-600">
+                            Phone Number (e.g., 923XXXXXXXXX)
+                            <input
+                                type="text"
+                                value={whatsapp.whatsappPhoneNumber || ''}
+                                onChange={(event) => setWhatsapp(prev => ({ ...prev, whatsappPhoneNumber: event.target.value }))}
+                                placeholder="923XXXXXXXXX"
+                                className="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                            />
+                        </label>
+                    </div>
+                    
+                    {qrDataUrl && (
+                        <div className="mt-4 flex flex-col items-center justify-center bg-gray-50 p-6 rounded-lg border border-gray-200">
+                            <h3 className="text-base font-semibold text-gray-900 mb-4">Scan QR Code with WhatsApp</h3>
+                            <img 
+                                src={qrDataUrl} 
+                                alt="WhatsApp QR Code" 
+                                className="w-64 h-64 border-4 border-white shadow-lg"
+                            />
+                            <p className="mt-4 text-sm text-gray-600">Open WhatsApp → Tap More options → Linked Devices → Link a device</p>
+                        </div>
+                    )}
                 </Card>
             </div>
         </div>

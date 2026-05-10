@@ -39,4 +39,30 @@ export const adminService = {
         const response = await api.get('/admin/orders', { params });
         return response.data;
     },
+
+    // WhatsApp Settings
+    getWhatsAppSettings: async () => {
+        const response = await api.get('/admin/whatsapp/settings');
+        return response.data;
+    },
+
+    updateWhatsAppSettings: async (settings) => {
+        const response = await api.patch('/admin/whatsapp/settings', settings);
+        return response.data;
+    },
+
+    startWhatsAppBot: async () => {
+        const response = await api.post('/admin/whatsapp/start');
+        return response.data;
+    },
+
+    stopWhatsAppBot: async () => {
+        const response = await api.post('/admin/whatsapp/stop');
+        return response.data;
+    },
+
+    resetWhatsAppSession: async () => {
+        const response = await api.post('/admin/whatsapp/reset');
+        return response.data;
+    },
 };

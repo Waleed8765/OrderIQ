@@ -7,6 +7,11 @@ const {
     updateRestaurantStatus,
     toggleRestaurantPromotion,
     updateUserStatus,
+    getWhatsAppSettings,
+    updateWhatsAppSettings,
+    startWhatsAppBot,
+    stopWhatsAppBot,
+    resetWhatsAppSession,
 } = require('../controllers/adminController');
 const { protect, authorize } = require('../middleware/auth');
 
@@ -25,6 +30,14 @@ router.route('/users').get(getAllUsers);
 router.route('/users/:id/status').patch(updateUserStatus);
 
 router.route('/orders').get(getAllOrders);
+
+// WhatsApp Bot Routes
+router.route('/whatsapp/settings')
+    .get(getWhatsAppSettings)
+    .patch(updateWhatsAppSettings);
+router.post('/whatsapp/start', startWhatsAppBot);
+router.post('/whatsapp/stop', stopWhatsAppBot);
+router.post('/whatsapp/reset', resetWhatsAppSession);
 
 module.exports = router;
 

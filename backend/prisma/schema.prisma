@@ -372,3 +372,19 @@ model Review {
 
   @@unique([userId, restaurantId], name: "user_restaurant_review")
 }
+
+// ----------------------------------------------------------------------------
+// Global App Settings (including WhatsApp Bot)
+// ----------------------------------------------------------------------------
+
+model AppSettings {
+  id                String    @id @default(uuid())
+  
+  // WhatsApp Bot Settings
+  whatsappEnabled   Boolean   @default(false)
+  whatsappPhoneNumber String? // Phone number in format: "923XXXXXXXXX"
+  whatsappStatus    String    @default("DISCONNECTED") // DISCONNECTED, CONNECTING, CONNECTED, ERROR
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}

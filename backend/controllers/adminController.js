@@ -1,4 +1,16 @@
 const prisma = require('../config/db');
+const { startWhatsApp, stopWhatsApp, getCurrentWhatsAppStatus, resetWhatsAppSession } = require('../services/whatsappService');
+
+// Helper to get or create app settings
+const getOrCreateAppSettings = async () => {
+    let settings = await prisma.appSettings.findFirst();
+    if (!settings) {
+        settings = await prisma.appSettings.create({
+            data: {}
+        });
+    }
+    return settings;
+};
 
 exports.getDashboardStats = async (req, res) => {
     try {
@@ -31,6 +43,97 @@ exports.getDashboardStats = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ success: false, message: 'Server error retrieving dashboard stats' });
+    }
+};
+
+// WhatsApp Settings Controllers
+exports.getWhatsAppSettings = async (req, res) => {
+    try {
+        const settings = await getCurrentWhatsAppStatus();
+        res.status(200).json({
+            success: true,
+            data: settings
+        });
+    } catch (error) {
+        console.error('Error fetching WhatsApp settings:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error retrieving WhatsApp settings'
+        });
+    }
+};
+
+exports.updateWhatsAppSettings = async (req, res) => {
+    try {
+        const { whatsappEnabled, whatsappPhoneNumber } = req.body;
+        let settings = await getOrCreateAppSettings();
+        
+        settings = await prisma.appSettings.update({
+            where: { id: settings.id },
+            data: {
+                whatsappEnabled: whatsappEnabled !== undefined ? whatsappEnabled : settings.whatsappEnabled,
+                whatsappPhoneNumber: whatsappPhoneNumber !== undefined ? whatsappPhoneNumber : settings.whatsappPhoneNumber
+            }
+        });
+
+        res.status(200).json({
+            success: true,
+            data: settings
+        });
+    } catch (error) {
+        console.error('Error updating WhatsApp settings:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error updating WhatsApp settings'
+        });
+    }
+};
+
+exports.startWhatsAppBot = async (req, res) => {
+    try {
+        await startWhatsApp();
+        res.status(200).json({
+            success: true,
+            message: 'WhatsApp bot starting'
+        });
+    } catch (error) {
+        console.error('Error starting WhatsApp bot:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: error.message || 'Server error starting WhatsApp bot'
+        });
+    }
+};
+
+exports.stopWhatsAppBot = async (req, res) => {
+    try {
+        await stopWhatsApp();
+        res.status(200).json({
+            success: true,
+            message: 'WhatsApp bot stopped'
+        });
+    } catch (error) {
+        console.error('Error stopping WhatsApp bot:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error stopping WhatsApp bot'
+        });
+    }
+};
+
+exports.resetWhatsAppSession = async (req, res) => {
+    try {
+        const result = await resetWhatsAppSession();
+        res.status(200).json({
+            success: true,
+            message: result.message
+        });
+    } catch (error) {
+        console.error('Error resetting WhatsApp session:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Server error resetting WhatsApp session'
+        });
     }
 };
 

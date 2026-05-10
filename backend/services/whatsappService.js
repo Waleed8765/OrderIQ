@@ -1,10 +1,16 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
+const QRCode = require('qrcode');
+const fs = require('fs');
+const path = require('path');
 const prisma = require('../config/db');
 
 // In-memory memory state:
 // { "1234567890": { stage: 'IDLE', restaurantId: null, cart: [], menuCache: {} } }
 const sessions = new Map();
+
+// Global variables to hold client and socket.io instance
+let globalClient = null;
+let globalIo = null;
 
 // Helper to calculate total price
 const calculateSubtotal = (cart) => {
@@ -19,7 +25,49 @@ const STAGES = {
     CHECKING_OUT: 'CHECKING_OUT'
 };
 
-const initialize = (io) => {
+// Helper function to get or create app settings
+const getOrCreateSettings = async () => {
+    try {
+        let settings = await prisma.appSettings.findFirst();
+        if (!settings) {
+            settings = await prisma.appSettings.create({
+                data: {}
+            });
+        }
+        return settings;
+    } catch (error) {
+        console.error('Error in getOrCreateSettings:', error);
+        // Fallback to temporary settings object if DB fails
+        return {
+            id: 'temp',
+            whatsappEnabled: true,
+            whatsappPhoneNumber: null,
+            whatsappStatus: 'DISCONNECTED'
+        };
+    }
+};
+
+// Update WhatsApp status in database
+const updateWhatsAppStatus = async (status) => {
+    try {
+        const settings = await getOrCreateSettings();
+        if (settings.id !== 'temp') {
+            return prisma.appSettings.update({
+                where: { id: settings.id },
+                data: { whatsappStatus: status }
+            });
+        }
+    } catch (error) {
+        console.error('Error updating WhatsApp status:', error);
+    }
+};
+
+// Initialize WhatsApp client
+const initializeClient = async () => {
+    if (globalClient) {
+        return globalClient;
+    }
+
     const client = new Client({
         authStrategy: new LocalAuth(),
         puppeteer: {
@@ -27,15 +75,59 @@ const initialize = (io) => {
         }
     });
 
-    client.on('qr', (qr) => {
+    globalClient = client;
+
+    // Check if client is already initialized/connected
+    client.on('loading_screen', (percent, message) => {
+        console.log('WhatsApp Bot loading:', percent, message);
+    });
+
+    client.on('qr', async (qr) => {
         console.log('----------------------------------------------------');
         console.log(' SCAN THIS QR CODE WITH WHATSAPP TO LOGIN THE BOT ');
         console.log('----------------------------------------------------');
-        qrcode.generate(qr, { small: true });
+        await updateWhatsAppStatus('QR_REQUIRED');
+        
+        try {
+            const qrDataUrl = await QRCode.toDataURL(qr);
+            if (globalIo) {
+                globalIo.emit('whatsapp_qr', { qr, qrDataUrl });
+            }
+        } catch (error) {
+            console.error('Error generating QR code data URL:', error);
+            if (globalIo) {
+                globalIo.emit('whatsapp_qr', { qr });
+            }
+        }
     });
 
-    client.on('ready', () => {
+    client.on('ready', async () => {
         console.log('✅ WhatsApp Bot is ready and logged in!');
+        await updateWhatsAppStatus('CONNECTED');
+        if (globalIo) {
+            globalIo.emit('whatsapp_ready');
+        }
+    });
+
+    client.on('authenticated', async (session) => {
+        console.log('✅ WhatsApp Bot authenticated!');
+    });
+
+    client.on('auth_failure', async (msg) => {
+        console.error('❌ WhatsApp Bot authentication failed:', msg);
+        await updateWhatsAppStatus('ERROR');
+        if (globalIo) {
+            globalIo.emit('whatsapp_error', { message: msg });
+        }
+    });
+
+    client.on('disconnected', async (reason) => {
+        console.log('❌ WhatsApp Bot disconnected:', reason);
+        await updateWhatsAppStatus('DISCONNECTED');
+        if (globalIo) {
+            globalIo.emit('whatsapp_disconnected', { reason });
+        }
+        globalClient = null;
     });
 
     client.on('message', async (msg) => {
@@ -78,7 +170,7 @@ const initialize = (io) => {
 
             // Checkout command
             if (text.toLowerCase() === 'checkout' && session.cart.length > 0) {
-                return await handleCheckout(chatId, session, msg, io, client);
+                return await handleCheckout(chatId, session, msg, globalIo, client);
             } else if (text.toLowerCase() === 'checkout') {
                 return msg.reply('Your cart is empty. Please add items to your cart first.');
             }
@@ -109,9 +201,102 @@ const initialize = (io) => {
         }
     });
 
-    client.initialize().catch(err => {
+    await client.initialize().catch(err => {
         console.error("Failed to initialize WhatsApp Client:", err);
     });
+
+    return client;
+};
+
+// Get current WhatsApp status (including checking client connection)
+const getCurrentWhatsAppStatus = async () => {
+    const settings = await getOrCreateSettings();
+    
+    // If we have a global client, check its actual state
+    if (globalClient) {
+        try {
+            // Check if client is ready/connected
+            if (globalClient.info && globalClient.info.wid) {
+                // If we have a wid, we're connected!
+                if (settings.whatsappStatus !== 'CONNECTED') {
+                    await updateWhatsAppStatus('CONNECTED');
+                }
+                return {
+                    ...settings,
+                    whatsappStatus: 'CONNECTED'
+                };
+            }
+        } catch (e) {
+            console.error('Error checking client state:', e);
+        }
+    }
+    
+    return settings;
+};
+
+// Start WhatsApp bot
+const startWhatsApp = async () => {
+    let settings = await getOrCreateSettings();
+    
+    // Auto-enable the bot if admin is trying to start it
+    if (!settings.whatsappEnabled) {
+        settings = await prisma.appSettings.update({
+            where: { id: settings.id },
+            data: { whatsappEnabled: true }
+        });
+    }
+    
+    // Only set to CONNECTING if we're not already connected
+    const currentStatus = await getCurrentWhatsAppStatus();
+    if (currentStatus.whatsappStatus !== 'CONNECTED') {
+        await updateWhatsAppStatus('CONNECTING');
+    }
+    
+    return initializeClient();
+};
+
+// Stop WhatsApp bot
+const stopWhatsApp = async () => {
+    try {
+        if (globalClient) {
+            // Try graceful logout first, then destroy
+            try {
+                await globalClient.logout();
+            } catch (logoutErr) {
+                console.log('Logout failed, proceeding to destroy:', logoutErr.message);
+            }
+            await globalClient.destroy();
+            globalClient = null;
+        }
+    } catch (err) {
+        console.error('Error stopping client:', err);
+        // Even if there's an error, set to null to force reset
+        globalClient = null;
+    }
+    await updateWhatsAppStatus('DISCONNECTED');
+};
+
+// Reset WhatsApp session to link new number
+const resetWhatsAppSession = async () => {
+    // First stop the current bot
+    await stopWhatsApp();
+    
+    // Delete the .wwebjs_auth directory to clear the saved session
+    const authDir = path.join(__dirname, '..', '.wwebjs_auth');
+    if (fs.existsSync(authDir)) {
+        console.log('Deleting WhatsApp auth directory to reset session...');
+        fs.rmSync(authDir, { recursive: true, force: true });
+    }
+    
+    // Update status
+    await updateWhatsAppStatus('DISCONNECTED');
+    
+    return { success: true, message: 'Session reset successfully. Ready to link new number.' };
+};
+
+// Initialize function (called at server start, stores io instance)
+const initialize = (io) => {
+    globalIo = io;
 };
 
 const showRestaurants = async (chatId, session, msg) => {
@@ -299,5 +484,10 @@ const handleCheckout = async (chatId, session, msg, io, client) => {
 };
 
 module.exports = {
-    initialize
+    initialize,
+    getOrCreateSettings,
+    getCurrentWhatsAppStatus,
+    startWhatsApp,
+    stopWhatsApp,
+    resetWhatsAppSession
 };

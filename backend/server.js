@@ -70,8 +70,23 @@ if (shouldInitializeBackgroundServices) {
 
 // WhatsApp Bot Service
 const whatsappService = require('./services/whatsappService');
+const prisma = require('./config/db');
+
 if (shouldInitializeBackgroundServices) {
     whatsappService.initialize(io);
+    
+    // Auto-start WhatsApp bot if enabled
+    (async () => {
+        try {
+            const settings = await whatsappService.getOrCreateSettings();
+            if (settings.whatsappEnabled) {
+                console.log('Auto-starting WhatsApp bot (enabled in settings)...');
+                await whatsappService.startWhatsApp();
+            }
+        } catch (error) {
+            console.error('Error auto-starting WhatsApp bot:', error);
+        }
+    })();
 }
 
 app.use('/api/auth', authRoutes);
