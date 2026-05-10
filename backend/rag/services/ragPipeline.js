@@ -7,6 +7,17 @@
 const ragConfig = require('../config');
 const { similaritySearch } = require('./vectorStoreService');
 const { chatCompletion, chatCompletionStream } = require('./llmService');
+const { buildRestaurantChunk } = require('./embeddingService');
+const prisma = require('../../config/db');
+
+// Pure greeting / small-talk: skip RAG entirely.
+const GREETING_RE = /^(hi+|hello+|hey+|yo+|hola|sup+|wassup|whats?\s*up|good\s*(morning|afternoon|evening|night)|how\s*(are|r)\s*(you|u|ya)|hru|thanks?|thank\s*you|ty|tysm|bye+|goodbye|ok+|okay|cool|nice|great|salam|assalam(u)?\s*alaikum)[\s!.?,😊👋🙏]*$/i;
+
+// Generic "show me restaurants/food" intent: vector search may miss, so fall back to top-rated DB rows.
+const GENERIC_LIST_RE = /\b(suggest|recommend|show|list|find|give|any|popular|best|top|good|nearby|some)\b[^?.!]*\b(restaurant|restaurants|place|places|food|cafe|cafes|spot|spots|eatery|eateries|menu|dish|dishes|cuisine|option|options)\b|^\s*(i'?m\s*hungry|what\s*(should|to|can)\s*(i|we)\s*(eat|order|get|have)|food\s*ideas?|hungry|order\s*food)\s*[?.!]*$/i;
+
+const GREETING_REPLY =
+  "Hi! 👋 I'm the OrderIQ Assistant. Ask me about restaurants, menus, or food recommendations and I'll help you find something great!";
 
 /**
  * Process a user chat message through the RAG pipeline.
@@ -17,42 +28,71 @@ const { chatCompletion, chatCompletionStream } = require('./llmService');
  * @returns {Promise<string>} - The assistant's response
  */
 async function processQuery(userMessage, conversationHistory = [], userContext = {}) {
-  // Step 1: Retrieve relevant documents from vector store
-  const retrievedDocs = await similaritySearch(userMessage, {
-    city: userContext.city || undefined,
-  });
+  const trimmed = userMessage.trim();
 
-  // Step 2: Build the context from retrieved documents
+  // Step 0: Greeting / small-talk short-circuit — don't hit the LLM at all.
+  if (GREETING_RE.test(trimmed)) {
+    return GREETING_REPLY;
+  }
+
+  const retrievedDocs = await retrieveDocs(trimmed, userContext);
   const context = buildContext(retrievedDocs);
+  const messages = buildMessages(trimmed, context, conversationHistory);
 
-  // Step 3: Assemble the full message array for the LLM
-  const messages = buildMessages(userMessage, context, conversationHistory);
-
-  // Step 4: Get LLM response
-  const response = await chatCompletion(messages);
-
-  return response;
+  return await chatCompletion(messages);
 }
 
 /**
  * Process a user query with streaming response.
- *
- * @param {string} userMessage
- * @param {Array} conversationHistory
- * @param {object} userContext
- * @param {function} onChunk - Callback for each text chunk
- * @returns {Promise<string>} - Full response text
  */
 async function processQueryStream(userMessage, conversationHistory = [], userContext = {}, onChunk) {
-  const retrievedDocs = await similaritySearch(userMessage, {
+  const trimmed = userMessage.trim();
+
+  if (GREETING_RE.test(trimmed)) {
+    onChunk(GREETING_REPLY);
+    return GREETING_REPLY;
+  }
+
+  const retrievedDocs = await retrieveDocs(trimmed, userContext);
+  const context = buildContext(retrievedDocs);
+  const messages = buildMessages(trimmed, context, conversationHistory);
+
+  return await chatCompletionStream(messages, onChunk);
+}
+
+/**
+ * Run vector search; if it returns nothing AND the user asked a generic
+ * "show/recommend restaurants" question, fall back to top-rated DB rows
+ * so the assistant always has something concrete to talk about.
+ */
+async function retrieveDocs(query, userContext) {
+  const docs = await similaritySearch(query, {
     city: userContext.city || undefined,
   });
+  if (docs.length > 0) return docs;
+  if (!GENERIC_LIST_RE.test(query)) return docs;
+  return await fetchTopRestaurantsAsDocs(userContext.city);
+}
 
-  const context = buildContext(retrievedDocs);
-  const messages = buildMessages(userMessage, context, conversationHistory);
+async function fetchTopRestaurantsAsDocs(city) {
+  const where = { status: 'OPEN' };
+  if (city) where.city = { equals: city, mode: 'insensitive' };
 
-  const response = await chatCompletionStream(messages, onChunk);
-  return response;
+  const restaurants = await prisma.restaurant.findMany({
+    where,
+    orderBy: [{ rating: 'desc' }, { reviewCount: 'desc' }],
+    take: 6,
+  });
+
+  return restaurants.map((r) => ({
+    source_type: 'restaurant',
+    source_id: r.id,
+    content: buildRestaurantChunk(r),
+    restaurant_id: r.id,
+    city: r.city,
+    area: r.area,
+    cuisine_types: r.cuisineTypes,
+  }));
 }
 
 /**
