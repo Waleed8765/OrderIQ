@@ -34,3 +34,4 @@ backend/.wwebjs_auth
 backend/.wwebjs_cache
 .wwebjs_auth
 .wwebjs_cache
+auth_info

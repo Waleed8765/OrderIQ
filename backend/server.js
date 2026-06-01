@@ -8,6 +8,7 @@ const rateLimit = require('express-rate-limit');
 const { Server } = require('socket.io');
 
 const app = express();
+app.set('trust proxy', 1); // Fix for express-rate-limit behind Railway proxy
 const server = http.createServer(app);
 const shouldInitializeBackgroundServices = process.env.DISABLE_BACKGROUND_SERVICES !== 'true';
 
