@@ -1,0 +1,8 @@
+{
+  "ignore": [
+    "auth_info/**",
+    ".wwebjs_auth/**",
+    ".wwebjs_cache/**",
+    "node_modules/**"
+  ]
+}
