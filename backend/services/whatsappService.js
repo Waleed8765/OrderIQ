@@ -1,8 +1,6 @@
 const {
     useMultiFileAuthState,
-    makeWASocket,
-    DisconnectReason,
-    downloadMediaMessage
+    makeWASocket
 } = require('@whiskeysockets/baileys');
 const QRCode = require('qrcode');
 const fs = require('fs');
@@ -112,7 +110,7 @@ const initializeClient = async () => {
         }
 
         if (connection === 'close') {
-            const reason = new DisconnectReason(update?.lastDisconnect?.error?.output?.statusCode);
+            const reason = update?.lastDisconnect?.error?.output?.statusCode || 'Unknown';
             console.log('❌ WhatsApp Bot disconnected:', reason);
             await updateWhatsAppStatus('DISCONNECTED');
             if (globalIo) {
@@ -253,10 +251,10 @@ const startWhatsApp = async () => {
 // Stop WhatsApp bot
 const stopWhatsApp = async () => {
     try {
-        if (globalClient && globalClient.end) {
-            await globalClient.end(new Error('Manual stop'));
-            globalClient = null;
+        if (globalClient && globalClient.ws && globalClient.ws.readyState === 1) {
+            globalClient.ws.close();
         }
+        globalClient = null;
     } catch (err) {
         console.error('Error stopping client:', err);
         globalClient = null;
