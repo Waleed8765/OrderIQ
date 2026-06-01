@@ -13,6 +13,10 @@ const sessions = new Map();
 // Global variables to hold client and socket.io instance
 let globalClient = null;
 let globalIo = null;
+let hasConnectedOnce = false;
+let reinitAttempts = 0;
+const MAX_REINIT_ATTEMPTS = 5;
+let isInitializing = false;
 
 // Helper to calculate total price
 const calculateSubtotal = (cart) => {
@@ -65,147 +69,215 @@ const updateWhatsAppStatus = async (status) => {
 
 // Initialize WhatsApp client with Baileys
 const initializeClient = async () => {
-    if (globalClient) {
+    if (isInitializing) {
+        console.log('Already initializing client, skipping...');
         return globalClient;
     }
 
-    const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+    // If client exists and is connected, return it
+    if (globalClient && globalClient.user) {
+        return globalClient;
+    }
 
-    const client = makeWASocket({
-        auth: state,
-        printQRInTerminal: false // We'll handle QR ourselves
-    });
+    isInitializing = true;
 
-    globalClient = client;
+    // If client exists but isn't connected, clean it up first
+    if (globalClient) {
+        try {
+            if (globalClient.ws && globalClient.ws.readyState === 1) {
+                globalClient.ws.close();
+            }
+        } catch (e) {
+            console.error('Error closing existing client:', e);
+        }
+        globalClient = null;
+    }
 
-    // Handle connection updates
-    client.ev.on('connection.update', async (update) => {
-        const { connection, qr } = update;
+    try {
+        const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 
-        if (qr) {
-            console.log('----------------------------------------------------');
-            console.log(' SCAN THIS QR CODE WITH WHATSAPP TO LOGIN THE BOT ');
-            console.log('----------------------------------------------------');
-            await updateWhatsAppStatus('QR_REQUIRED');
+        const client = makeWASocket({
+            auth: state,
+            printQRInTerminal: false // We'll handle QR ourselves
+        });
 
-            try {
-                const qrDataUrl = await QRCode.toDataURL(qr);
-                if (globalIo) {
-                    globalIo.emit('whatsapp_qr', { qr, qrDataUrl });
+        globalClient = client;
+
+        // Handle connection updates
+        client.ev.on('connection.update', async (update) => {
+            const { connection, qr } = update;
+
+            if (qr) {
+                console.log('----------------------------------------------------');
+                console.log(' SCAN THIS QR CODE WITH WHATSAPP TO LOGIN THE BOT ');
+                console.log('----------------------------------------------------');
+                await updateWhatsAppStatus('QR_REQUIRED');
+
+                try {
+                    const qrDataUrl = await QRCode.toDataURL(qr);
+                    if (globalIo) {
+                        globalIo.emit('whatsapp_qr', { qr, qrDataUrl });
+                    }
+                } catch (error) {
+                    console.error('Error generating QR code data URL:', error);
+                    if (globalIo) {
+                        globalIo.emit('whatsapp_qr', { qr });
+                    }
                 }
-            } catch (error) {
-                console.error('Error generating QR code data URL:', error);
+            }
+
+            if (connection === 'open') {
+                console.log('✅ WhatsApp Bot is ready and logged in!');
+                hasConnectedOnce = true;
+                reinitAttempts = 0;
+                await updateWhatsAppStatus('CONNECTED');
                 if (globalIo) {
-                    globalIo.emit('whatsapp_qr', { qr });
+                    globalIo.emit('whatsapp_ready');
                 }
             }
-        }
 
-        if (connection === 'open') {
-            console.log('✅ WhatsApp Bot is ready and logged in!');
-            await updateWhatsAppStatus('CONNECTED');
-            if (globalIo) {
-                globalIo.emit('whatsapp_ready');
+            if (connection === 'close') {
+                const reason = update?.lastDisconnect?.error?.output?.statusCode || 'Unknown';
+                console.log('❌ WhatsApp Bot disconnected:', reason);
+                await updateWhatsAppStatus('DISCONNECTED');
+                if (globalIo) {
+                    globalIo.emit('whatsapp_disconnected', { reason });
+                }
+
+                // Only set globalClient to null if it's not an automatic reconnection (440)
+                // or if it's a manual stop or invalid credentials
+                const shouldClearClient = ![440].includes(reason);
+                if (shouldClearClient) {
+                    globalClient = null;
+                }
+
+                // Handle re-initialization only for certain errors
+                // Don't re-initialize for 440 because Baileys handles that automatically
+                const shouldReinit = [401, 408, 515].includes(reason);
+                if (shouldReinit && reinitAttempts < MAX_REINIT_ATTEMPTS && !isInitializing) {
+                    reinitAttempts++;
+                    console.log(`Re-initializing client (attempt ${reinitAttempts}/${MAX_REINIT_ATTEMPTS})...`);
+                    
+                    if (reason === 401) {
+                        console.log('Clearing invalid auth credentials...');
+                        try {
+                            const authDir = path.join(__dirname, '..', 'auth_info');
+                            if (fs.existsSync(authDir)) {
+                                fs.rmSync(authDir, { recursive: true, force: true });
+                            }
+                        } catch (e) {
+                            console.error('Error clearing auth folder:', e);
+                        }
+                    }
+                    
+                    setTimeout(async () => {
+                        isInitializing = false;
+                        await initializeClient();
+                    }, 2000);
+                } else if (reinitAttempts >= MAX_REINIT_ATTEMPTS) {
+                    console.log('Max re-initialization attempts reached. Bot will stay disconnected.');
+                    isInitializing = false;
+                } else {
+                    isInitializing = false;
+                }
             }
-        }
+        });
 
-        if (connection === 'close') {
-            const reason = update?.lastDisconnect?.error?.output?.statusCode || 'Unknown';
-            console.log('❌ WhatsApp Bot disconnected:', reason);
-            await updateWhatsAppStatus('DISCONNECTED');
-            if (globalIo) {
-                globalIo.emit('whatsapp_disconnected', { reason });
-            }
-            globalClient = null;
-        }
-    });
+        // Save credentials when updated
+        client.ev.on('creds.update', saveCreds);
 
-    // Save credentials when updated
-    client.ev.on('creds.update', saveCreds);
+        // Handle incoming messages
+        client.ev.on('messages.upsert', async (m) => {
+            const msg = m.messages[0];
+            if (!msg.key.fromMe && m.type === 'notify') {
+                console.log(`[WhatsApp] Incoming message from ${msg.key.remoteJid}`);
 
-    // Handle incoming messages
-    client.ev.on('messages.upsert', async (m) => {
-        const msg = m.messages[0];
-        if (!msg.key.fromMe && m.type === 'notify') {
-            console.log(`[WhatsApp] Incoming message from ${msg.key.remoteJid}`);
+                // SAFETY FILTERS
+                if (msg.key.fromMe) return;
+                if (msg.key.remoteJid === 'status@broadcast') return;
 
-            // SAFETY FILTERS
-            if (msg.key.fromMe) return;
-            if (msg.key.remoteJid === 'status@broadcast') return;
+                // Only reply to individual chats
+                const isIndividualChat = msg.key.remoteJid.endsWith('@c.us') || msg.key.remoteJid.endsWith('@lid');
+                if (!isIndividualChat) return;
 
-            // Only reply to individual chats
-            const isIndividualChat = msg.key.remoteJid.endsWith('@c.us') || msg.key.remoteJid.endsWith('@lid');
-            if (!isIndividualChat) return;
+                const chatId = msg.key.remoteJid;
+                let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
+                text = text.trim();
 
-            const chatId = msg.key.remoteJid;
-            let text = msg.message?.conversation || msg.message?.extendedTextMessage?.text || '';
-            text = text.trim();
-
-            // Initialize session if not exists
-            if (!sessions.has(chatId)) {
-                sessions.set(chatId, {
-                    stage: STAGES.IDLE,
-                    restaurantId: null,
-                    cart: [],
-                    menuCache: {}
-                });
-            }
-
-            const session = sessions.get(chatId);
-
-            try {
-                // Cancel / Reset command
-                if (text.toLowerCase() === 'cancel' || text.toLowerCase() === 'reset') {
+                // Initialize session if not exists
+                if (!sessions.has(chatId)) {
                     sessions.set(chatId, {
                         stage: STAGES.IDLE,
                         restaurantId: null,
                         cart: [],
                         menuCache: {}
                     });
-                    await sendWhatsAppMessage(chatId, 'Your session has been reset. Say "Hi" to start again.');
-                    return;
                 }
 
-                // Checkout command
-                if (text.toLowerCase() === 'checkout' && session.cart.length > 0) {
-                    return await handleCheckout(chatId, session, globalIo, client);
-                } else if (text.toLowerCase() === 'checkout') {
-                    return await sendWhatsAppMessage(chatId, 'Your cart is empty. Please add items to your cart first.');
-                }
+                const session = sessions.get(chatId);
 
-                // State Machine
-                const triggerWords = ['hi', 'hello', 'menu', 'start', 'order', 'hey'];
-
-                switch (session.stage) {
-                    case STAGES.IDLE:
-                        if (triggerWords.includes(text.toLowerCase())) {
-                            return await showRestaurants(chatId, session, client);
-                        }
+                try {
+                    // Cancel / Reset command
+                    if (text.toLowerCase() === 'cancel' || text.toLowerCase() === 'reset') {
+                        sessions.set(chatId, {
+                            stage: STAGES.IDLE,
+                            restaurantId: null,
+                            cart: [],
+                            menuCache: {}
+                        });
+                        await sendWhatsAppMessage(chatId, 'Your session has been reset. Say "Hi" to start again.');
                         return;
+                    }
 
-                    case STAGES.VIEWING_RESTAURANTS:
-                        return await handleRestaurantSelection(chatId, session, text, client);
+                    // Checkout command
+                    if (text.toLowerCase() === 'checkout' && session.cart.length > 0) {
+                        return await handleCheckout(chatId, session, globalIo, client);
+                    } else if (text.toLowerCase() === 'checkout') {
+                        return await sendWhatsAppMessage(chatId, 'Your cart is empty. Please add items to your cart first.');
+                    }
 
-                    case STAGES.VIEWING_MENU:
-                        return await handleMenuSelection(chatId, session, text, client);
+                    // State Machine
+                    const triggerWords = ['hi', 'hello', 'menu', 'start', 'order', 'hey'];
 
-                    default:
-                        return await sendWhatsAppMessage(chatId, 'I didn\'t understand that. You can type "reset" to start over.');
+                    switch (session.stage) {
+                        case STAGES.IDLE:
+                            if (triggerWords.includes(text.toLowerCase())) {
+                                return await showRestaurants(chatId, session, client);
+                            }
+                            return;
+
+                        case STAGES.VIEWING_RESTAURANTS:
+                            return await handleRestaurantSelection(chatId, session, text, client);
+
+                        case STAGES.VIEWING_MENU:
+                            return await handleMenuSelection(chatId, session, text, client);
+
+                        default:
+                            return await sendWhatsAppMessage(chatId, 'I didn\'t understand that. You can type "reset" to start over.');
+                    }
+
+                } catch (error) {
+                    console.error('WhatsApp Bot Error:', error);
+                    await sendWhatsAppMessage(chatId, 'Sorry, an error occurred. Please type "reset" and try again.');
                 }
-
-            } catch (error) {
-                console.error('WhatsApp Bot Error:', error);
-                await sendWhatsAppMessage(chatId, 'Sorry, an error occurred. Please type "reset" and try again.');
             }
-        }
-    });
+        });
+    } catch (error) {
+        console.error('Error initializing client:', error);
+        isInitializing = false;
+    }
 
-    return client;
+    isInitializing = false;
+    return globalClient;
 };
 
 // Helper to send WhatsApp messages with Baileys
 const sendWhatsAppMessage = async (to, text) => {
     try {
+        if (!globalClient) {
+            console.error('Cannot send message: WhatsApp client is not connected');
+            return;
+        }
         await globalClient.sendMessage(to, { text: text });
     } catch (error) {
         console.error('Error sending WhatsApp message:', error);
@@ -245,6 +317,7 @@ const startWhatsApp = async () => {
         await updateWhatsAppStatus('CONNECTING');
     }
 
+    reinitAttempts = 0;
     return initializeClient();
 };
 
@@ -259,7 +332,13 @@ const stopWhatsApp = async () => {
         console.error('Error stopping client:', err);
         globalClient = null;
     }
-    await updateWhatsAppStatus('DISCONNECTED');
+    // First update the database status
+    const updatedSettings = await updateWhatsAppStatus('DISCONNECTED');
+    if (globalIo) {
+        globalIo.emit('whatsapp_disconnected', { reason: 'MANUAL_STOP' });
+    }
+    // Return the updated settings
+    return updatedSettings;
 };
 
 // Reset WhatsApp session
@@ -273,6 +352,8 @@ const resetWhatsAppSession = async () => {
         fs.rmSync(authDir, { recursive: true, force: true });
     }
 
+    reinitAttempts = 0;
+    hasConnectedOnce = false;
     await updateWhatsAppStatus('DISCONNECTED');
 
     return { success: true, message: 'Session reset successfully. Ready to link new number.' };

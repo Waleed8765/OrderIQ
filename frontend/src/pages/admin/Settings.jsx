@@ -131,6 +131,8 @@ const SettingsPage = () => {
     const handleStartWhatsApp = async () => {
         try {
             setLoading(true);
+            // Immediately update state to show connecting
+            setWhatsapp(prev => ({ ...prev, whatsappStatus: 'CONNECTING' }));
             await adminService.startWhatsAppBot();
             setStatusMessage('WhatsApp bot starting');
             await fetchWhatsAppSettings();
@@ -148,6 +150,9 @@ const SettingsPage = () => {
     const handleStopWhatsApp = async () => {
         try {
             setLoading(true);
+            // Immediately update state to show disconnected
+            setWhatsapp(prev => ({ ...prev, whatsappStatus: 'DISCONNECTED' }));
+            setQrDataUrl(null);
             await adminService.stopWhatsAppBot();
             setStatusMessage('WhatsApp bot stopped');
             await fetchWhatsAppSettings();
