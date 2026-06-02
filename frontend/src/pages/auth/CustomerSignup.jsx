@@ -83,7 +83,7 @@ const CustomerSignup = () => {
             await checkAuth();
 
             toast.success('Logged in successfully!');
-            navigate('/customer/home');
+            navigate('/');
         } catch (error) {
             console.error('Login error:', error);
             if (error.code === 'auth/user-not-found') {
@@ -136,7 +136,7 @@ const CustomerSignup = () => {
             await checkAuth();
 
             toast.success('Account created successfully!');
-            navigate('/customer/home');
+            navigate('/');
 
         } catch (error) {
             console.error('Registration error details:', error.response?.data || error.message);

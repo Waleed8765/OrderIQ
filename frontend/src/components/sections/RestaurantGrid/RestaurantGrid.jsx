@@ -250,7 +250,7 @@ const RestaurantGrid = () => {
           </div>
         ) : restaurants.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
               {!showMapView ? restaurants.map((restaurant) => (
                 <Link
                   to={`/customer/restaurant/${restaurant.id}`}
@@ -270,14 +270,7 @@ const RestaurantGrid = () => {
                     {/* Overlay Gradient */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
 
-                    {/* Overlay Closed Badge */}
-                    {restaurant.isClosed && (
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-                        <span className="px-4 py-1.5 border-2 border-red-500 text-red-500 font-black rounded-lg shadow-xl transform -rotate-12 uppercase tracking-wide bg-white/90">
-                          Currently Closed
-                        </span>
-                      </div>
-                    )}
+
 
                     {/* Promoted Badge */}
                     {restaurant.promoted && (
@@ -299,24 +292,24 @@ const RestaurantGrid = () => {
 
                   {/* Content */}
                   <div className="p-4">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
+                    <div className="flex justify-between items-start mb-3 gap-2">
+                      <div className="min-w-0 flex-1">
                         <h3 className="font-bold text-lg text-neutral-900 truncate">
                           {restaurant.name}
                         </h3>
 
                         {/* Cuisine Chips */}
-                        <div className="flex items-center gap-1 mt-2">
+                        <div className="flex items-center gap-1 mt-2 flex-wrap">
                           {restaurant.cuisine.slice(0, 2).map((cuisine, idx) => (
                             <span
                               key={idx}
-                              className="px-2 py-1 bg-neutral-100 text-neutral-600 text-xs rounded"
+                              className="px-2 py-1 bg-neutral-100 text-neutral-600 text-xs rounded flex-shrink-0"
                             >
                               {cuisine}
                             </span>
                           ))}
                           {restaurant.cuisine.length > 2 && (
-                            <span className="text-xs text-neutral-400">
+                            <span className="text-xs text-neutral-400 flex-shrink-0">
                               +{restaurant.cuisine.length - 2}
                             </span>
                           )}
@@ -324,7 +317,7 @@ const RestaurantGrid = () => {
                       </div>
 
                       {/* Rating */}
-                      <div className="flex items-center bg-green-50 px-2 py-1 rounded-lg">
+                      <div className="flex items-center bg-green-50 px-2 py-1 rounded-lg flex-shrink-0">
                         <Star className="w-4 h-4 text-green-600 fill-current" />
                         <span className="ml-1 font-bold text-green-700">{restaurant.rating ? Number(restaurant.rating).toFixed(1) : 'New'}</span>
                         <span className="ml-1 text-xs text-neutral-500">({restaurant.reviewCount})</span>
@@ -332,13 +325,13 @@ const RestaurantGrid = () => {
                     </div>
 
                     {/* Mode Availability */}
-                    <div className="flex items-center gap-2 mb-4">
+                    <div className="flex items-center gap-2 mb-4 flex-wrap">
                       {restaurant.modes.map((mode) => {
                         const ModeIcon = modeIcons[mode].icon;
                         return (
                           <span
                             key={mode}
-                            className="flex items-center gap-1 px-2 py-1 bg-neutral-50 text-neutral-600 text-xs rounded"
+                            className="flex items-center gap-1 px-2 py-1 bg-neutral-50 text-neutral-600 text-xs rounded flex-shrink-0"
                           >
                             <ModeIcon className="w-3 h-3" />
                             {modeIcons[mode].label}
@@ -348,17 +341,27 @@ const RestaurantGrid = () => {
                     </div>
 
                     {/* Service Info */}
-                    <div className="flex items-center justify-between text-sm text-neutral-600">
-                      <div className="flex items-center">
-                        <Clock className="w-4 h-4 mr-1" />
+                    <div className="flex items-center justify-between text-sm text-neutral-600 gap-2">
+                      <div className="flex items-center min-w-0">
+                        <Clock className="w-4 h-4 mr-1 flex-shrink-0" />
                         <span className={restaurant.isClosed ? 'text-red-500 font-medium' : ''}>
                           {restaurant.isClosed ? 'Closed' : restaurant.deliveryTime}
                         </span>
                       </div>
-                      <div className="text-neutral-500">
+                      <div className="text-neutral-500 flex-shrink-0">
                         {restaurant.deliveryFee} delivery fee
                       </div>
                     </div>
+                    
+                    {/* Personalized Text */}
+                    {restaurant.aiReason && (
+                      <div className="mt-3">
+                        <div className="flex items-start gap-2 rounded-lg bg-primary-50 border border-primary-100 p-2">
+                          <Sparkles className="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0" />
+                          <p className="text-xs text-primary-800 line-clamp-2">{restaurant.aiReason}</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </Link>
               )) : (

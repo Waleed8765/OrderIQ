@@ -41,7 +41,7 @@ const RestaurantCard = ({ restaurant, mode = 'delivery' }) => {
   return (
     <Link
       to={`/customer/restaurant/${restaurant.id}`}
-      className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-lg transition-all duration-300 block"
+      className="group bg-white border border-gray-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-lg transition-all duration-300"
     >
       {/* Image Container */}
       <div className="relative h-40 overflow-hidden">
@@ -54,14 +54,7 @@ const RestaurantCard = ({ restaurant, mode = 'delivery' }) => {
         {/* Overlay Gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
 
-        {/* Overlay Closed Badge */}
-        {isClosed && (
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-10">
-            <span className="px-4 py-1.5 border-2 border-red-500 text-red-500 font-black rounded-lg shadow-xl transform -rotate-12 uppercase tracking-wide bg-white/90">
-              Currently Closed
-            </span>
-          </div>
-        )}
+
 
         {/* Promoted Badge */}
         {promoted && (
@@ -98,24 +91,24 @@ const RestaurantCard = ({ restaurant, mode = 'delivery' }) => {
 
       {/* Content */}
       <div className="p-4">
-        <div className="flex justify-between items-start mb-3">
-          <div>
+        <div className="flex justify-between items-start mb-3 gap-2">
+          <div className="min-w-0 flex-1">
             <h3 className="font-bold text-lg text-gray-900 truncate">
               {name}
             </h3>
 
             {/* Cuisine Chips */}
-            <div className="flex items-center gap-1 mt-2">
+            <div className="flex items-center gap-1 mt-2 flex-wrap">
               {cuisines.slice(0, 2).map((cuisine, idx) => (
                 <span
                   key={idx}
-                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded"
+                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded flex-shrink-0"
                 >
                   {cuisine}
                 </span>
               ))}
               {cuisines.length > 2 && (
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-gray-400 flex-shrink-0">
                   +{cuisines.length - 2}
                 </span>
               )}
@@ -123,36 +116,39 @@ const RestaurantCard = ({ restaurant, mode = 'delivery' }) => {
           </div>
 
           {/* Rating */}
-          <div className="flex items-center bg-green-50 px-2 py-1 rounded-lg">
+          <div className="flex items-center bg-green-50 px-2 py-1 rounded-lg flex-shrink-0">
             <Star className="w-4 h-4 text-green-600 fill-current" />
             <span className="ml-1 font-bold text-green-700">{rating}</span>
           </div>
         </div>
 
         {/* Mode Info */}
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between text-sm text-gray-600 gap-2">
+          <div className="flex items-center gap-4 min-w-0">
             <div className="flex items-center">
-              <Clock className="w-4 h-4 mr-1 text-gray-400" />
+              <Clock className="w-4 h-4 mr-1 text-gray-400 flex-shrink-0" />
               <span className={isClosed ? 'text-red-500 font-medium' : 'text-gray-700'}>
                 {isClosed ? 'Closed' : (mode === 'delivery' ? deliveryTime : pickupTime)}
               </span>
             </div>
             {!isClosed && mode === 'delivery' && (
-              <span className="text-gray-500">{deliveryFee}</span>
+              <span className="text-gray-500 flex-shrink-0">{deliveryFee}</span>
             )}
           </div>
-          <div className="flex gap-2 text-gray-400" title="Supported Modes">
+          <div className="flex gap-2 text-gray-400 flex-shrink-0" title="Supported Modes">
             {delivery && <Truck className="w-4 h-4 hover:text-gray-700" />}
             {takeaway && <Package className="w-4 h-4 hover:text-gray-700" />}
             {dineIn && <Utensils className="w-4 h-4 hover:text-gray-700" />}
           </div>
         </div>
-
+        
+        {/* Personalized Text */}
         {aiReason && (
-          <div className="mt-3 flex items-start gap-2 rounded-lg bg-primary-50 border border-primary-100 p-2">
-            <Sparkles className="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0" />
-            <p className="text-xs text-primary-800 line-clamp-2">{aiReason}</p>
+          <div className="mt-3">
+            <div className="flex items-start gap-2 rounded-lg bg-primary-50 border border-primary-100 p-2">
+              <Sparkles className="w-4 h-4 text-primary-600 mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-primary-800 line-clamp-2">{aiReason}</p>
+            </div>
           </div>
         )}
       </div>

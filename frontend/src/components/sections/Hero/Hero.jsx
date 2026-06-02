@@ -5,9 +5,9 @@ import { Search, ArrowRight, Star, Clock, Shield, QrCode } from 'lucide-react';
 const Hero = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [featuredCards, setFeaturedCards] = useState([
-    { id: 1, name: 'Spice Symphony', rating: 4.8, cuisine: 'Indian • North Indian', prepTime: '25-30 min', image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=300&fit=crop' },
-    { id: 2, name: 'Tokyo Sushi Bar', rating: 4.7, cuisine: 'Japanese • Sushi', prepTime: '30-40 min', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?w=400&h=300&fit=crop' },
-    { id: 3, name: 'La Pasta Fresca', rating: 4.5, cuisine: 'Italian • Pasta', prepTime: '20-25 min', image: 'https://images.unsplash.com/photo-1473093226795-af9932fe5856?w=400&h=300&fit=crop' },
+    { id: 1, name: 'Savour Foods', rating: 4.9, cuisine: 'Pakistani • Desi', prepTime: '20-25 min', image: 'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?w=400&h=300&fit=crop' },
+    { id: 2, name: 'New Tikka', rating: 4.8, cuisine: 'Pakistani • BBQ', prepTime: '15-20 min', image: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop' },
+    { id: 3, name: 'Burger Lab', rating: 4.7, cuisine: 'Pakistani • Burgers', prepTime: '10-15 min', image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=400&h=300&fit=crop' },
   ]);
 
   const navigate = useNavigate();
@@ -196,14 +196,6 @@ const Hero = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Stats Badge */}
-            <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg">
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-primary-600" />
-                <span className="text-sm font-semibold text-neutral-900">Avg prep time: 14 min</span>
               </div>
             </div>
           </div>

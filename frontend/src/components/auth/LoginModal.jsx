@@ -39,7 +39,7 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onForgotPassword }) => 
             } else if (dbRole === 'RESTAURANT_OWNER') {
                 navigate('/restaurant/dashboard');
             } else if (dbRole === 'CUSTOMER') {
-                navigate('/customer/home');
+                navigate('/');
             } else {
                 // Unknown role - log and redirect to home
                 console.warn('[LoginModal] Unknown role:', dbRole, '— redirecting to home');
