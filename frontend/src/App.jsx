@@ -75,11 +75,12 @@ const AdminSettings = lazy(() => import("./pages/admin/Settings"));
 
 function App() {
   return (
-    <>
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>}>
-        <Routes>
-          {/* Auth */}
-          <Route path="/" element={<LandingPage />} />
+    <CartProvider>
+      <FavoritesProvider>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white"><div className="w-10 h-10 border-4 border-primary-500 border-t-transparent rounded-full animate-spin" /></div>}>
+          <Routes>
+            {/* Auth */}
+            <Route path="/" element={<LandingPage />} />
           <Route path="/scan" element={<QRScanPage />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/register" element={<RoleSelection />} />
@@ -104,15 +105,7 @@ function App() {
           <Route path="/data-protection" element={<DataProtection />} />
 
         {/*Customer Dashboard*/}
-        <Route
-          element={
-            <CartProvider>
-              <FavoritesProvider>
-                <Outlet />
-              </FavoritesProvider>
-            </CartProvider>
-          }
-        >
+        <Route element={<Outlet />}>
           <Route path="/customer" element={<CustomerHome />} />
           <Route path="/customer/home" element={<CustomerHome />} />
           <Route
@@ -177,34 +170,27 @@ function App() {
         </Route>
 
         {/* Public QR Menu Route (for scanned QR codes) */}
-        <Route
-          element={
-            <CartProvider>
-              <Outlet />
-            </CartProvider>
-          }
-        >
-          <Route path="/menu/:restaurantId" element={<QRMenuPage />} />
-        </Route>
+        <Route path="/menu/:restaurantId" element={<QRMenuPage />} />
       </Routes>
-      </Suspense>
-      <GlobalAuthModals />
-      <ChatAssistant />
-      <Toaster
-        position="top-center"
-        toastOptions={{
-          duration: 3000,
-          style: {
-            background: '#1f2937',
-            color: '#fff',
-            borderRadius: '12px',
-            padding: '12px 20px',
-            fontSize: '14px',
-            fontWeight: '500',
-          },
-        }}
-      />
-    </>
+        </Suspense>
+        <GlobalAuthModals />
+        <ChatAssistant />
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#1f2937',
+              color: '#fff',
+              borderRadius: '12px',
+              padding: '12px 20px',
+              fontSize: '14px',
+              fontWeight: '500',
+            },
+          }}
+        />
+      </FavoritesProvider>
+    </CartProvider>
   );
 }
 

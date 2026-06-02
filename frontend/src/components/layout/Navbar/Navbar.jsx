@@ -5,9 +5,11 @@ import LoginModal from "../../auth/LoginModal";
 import ForgotPasswordModal from "../../auth/ForgotPasswordModal";
 import PasswordChangedModal from "../../auth/PasswordChangedModal";
 import { useAuth } from '../../../features/auth/AuthContext';
+import { useCart } from '../../../features/customer/CartContext';
 
 const Navbar = () => {
   const { isAuthenticated, isRestaurantOwner, isAdmin } = useAuth();
+  const { cartCount } = useCart();
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
@@ -19,9 +21,6 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const searchRef = useRef(null);
-
-  // Cart count (mock)
-  const cartCount = 3;
 
   const recentSearches = [
     'Pizza near me', 'Burger King', 'Sushi restaurants',
