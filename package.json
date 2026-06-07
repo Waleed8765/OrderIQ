@@ -2,6 +2,10 @@
   "name": "final-year-project",
   "version": "1.0.0",
   "description": "Root package.json for running backend and frontend simultaneously",
+  "engines": {
+    "node": "20.x",
+    "npm": "10.x"
+  },
   "scripts": {
     "start": "cd backend && npm start",
     "postinstall": "cd backend && npm install",
