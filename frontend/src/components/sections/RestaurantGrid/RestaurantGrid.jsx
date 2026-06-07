@@ -201,7 +201,7 @@ const RestaurantGrid = () => {
 
   return (
     <section id="restaurants" className="py-12 bg-white">
-      <div className="max-w-content mx-auto px-6">
+      <div className="max-w-content mx-auto px-4 md:px-6">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
           <div>

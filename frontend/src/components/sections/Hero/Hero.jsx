@@ -24,7 +24,7 @@ const Hero = () => {
   ];
 
   return (
-    <section className="relative isolate overflow-hidden pt-24 pb-20 md:pt-32 md:pb-24">
+    <section className="relative isolate overflow-hidden pt-48 md:pt-32 pb-20 md:pb-24">
       {/* Animated mesh — isolate + z-0 keeps layers above parent bg-white (negative z-index was hidden behind the page) */}
       <div className="pointer-events-none absolute inset-0 z-0" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-b from-primary-50 via-white to-neutral-50/95" />
@@ -49,8 +49,8 @@ const Hero = () => {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary-400/60 to-transparent" />
       </div>
 
-      <div className="relative z-10 max-w-content mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+      <div className="relative z-10 max-w-content mx-auto px-4 md:px-6">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
           {/* Left Column: Value Prop & CTAs */}
           <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
@@ -66,7 +66,7 @@ const Hero = () => {
             </p>
 
             {/* CTA Row */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="flex flex-col sm:flex-row gap-3 mb-8">
               <button
                 onClick={() => {
                   const el = document.getElementById('restaurants');
@@ -76,16 +76,18 @@ const Hero = () => {
                     navigate('/customer/home');
                   }
                 }}
-                className="inline-flex items-center justify-center px-6 py-3.5 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg hover:shadow-xl">
+                className="inline-flex items-center justify-center px-5 py-3 bg-primary-600 text-white font-semibold rounded-xl hover:bg-primary-700 transition-colors shadow-lg hover:shadow-xl w-full sm:w-auto"
+              >
                 Find restaurants
-                <ArrowRight className="ml-2 w-5 h-5" />
+                <ArrowRight className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
               </button>
 
               <button
                 type="button"
                 onClick={() => navigate('/scan')}
-                className="inline-flex items-center justify-center px-6 py-3.5 border-2 border-neutral-300 text-neutral-700 font-semibold rounded-xl hover:border-primary-500 hover:text-primary-600 transition-colors">
-                <QrCode className="mr-2 w-5 h-5" />
+                className="inline-flex items-center justify-center px-5 py-3 border-2 border-neutral-300 text-neutral-700 font-semibold rounded-xl hover:border-primary-500 hover:text-primary-600 transition-colors w-full sm:w-auto"
+              >
+                <QrCode className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
                 Scan QR for dine‑in
               </button>
             </div>
@@ -153,7 +155,8 @@ const Hero = () => {
                           navigate('/customer/home');
                         }
                       }}
-                      className="text-primary-600 hover:text-primary-700 font-semibold">
+                      className="text-primary-600 hover:text-primary-700 font-semibold"
+                    >
                       View menu →
                     </button>
                   </div>
@@ -162,16 +165,16 @@ const Hero = () => {
 
               {/* Floating Cards */}
               <div
-                className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-lg p-4 w-64 motion-safe:animate-hero-card-float-left motion-reduce:-rotate-2"
+                className="absolute -bottom-8 left-2 md:-bottom-6 md:-left-6 bg-white rounded-xl shadow-lg p-4 w-56 md:w-64 motion-safe:animate-hero-card-float-left motion-reduce:-rotate-2"
                 style={{ animationDelay: '0.2s' }}
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-16 h-16 bg-neutral-200 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-neutral-200 rounded-lg overflow-hidden flex-shrink-0">
                     <img src={featuredCards[1].image} alt={featuredCards[1].name} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-neutral-900">{featuredCards[1].name}</h4>
-                    <p className="text-sm text-neutral-500">{featuredCards[1].cuisine}</p>
+                    <h4 className="font-bold text-sm md:text-base text-neutral-900">{featuredCards[1].name}</h4>
+                    <p className="text-xs md:text-sm text-neutral-500">{featuredCards[1].cuisine}</p>
                     <div className="flex items-center mt-1">
                       <Star className="w-3 h-3 text-yellow-500 fill-current" />
                       <span className="text-xs font-medium ml-1">{featuredCards[1].rating}</span>
@@ -181,15 +184,15 @@ const Hero = () => {
               </div>
 
               <div
-                className="absolute -top-6 -right-6 bg-white rounded-xl shadow-lg p-4 w-64 motion-safe:animate-hero-card-float-right motion-safe:[animation-delay:0.6s] motion-reduce:rotate-2"
+                className="absolute -top-8 right-2 md:-top-6 md:-right-6 bg-white rounded-xl shadow-lg p-4 w-56 md:w-64 motion-safe:animate-hero-card-float-right motion-safe:[animation-delay:0.6s] motion-reduce:rotate-2"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-16 h-16 bg-neutral-200 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-neutral-200 rounded-lg overflow-hidden flex-shrink-0">
                     <img src={featuredCards[2].image} alt={featuredCards[2].name} className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <h4 className="font-bold text-neutral-900">{featuredCards[2].name}</h4>
-                    <p className="text-sm text-neutral-500">{featuredCards[2].cuisine}</p>
+                    <h4 className="font-bold text-sm md:text-base text-neutral-900">{featuredCards[2].name}</h4>
+                    <p className="text-xs md:text-sm text-neutral-500">{featuredCards[2].cuisine}</p>
                     <div className="flex items-center mt-1">
                       <Star className="w-3 h-3 text-yellow-500 fill-current" />
                       <span className="text-xs font-medium ml-1">{featuredCards[2].rating}</span>

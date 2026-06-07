@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
+    "@stripe/react-stripe-js": "^6.6.0",
+    "@stripe/stripe-js": "^9.7.0",
     "axios": "^1.13.6",
     "firebase": "^10.12.5",
     "framer-motion": "^12.27.1",

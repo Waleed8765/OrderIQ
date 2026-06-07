@@ -83,7 +83,7 @@ const Filters = () => {
     <div 
       className={`transition-all duration-300 ${
         isSticky 
-          ? 'fixed top-18 left-0 right-0 z-40 bg-white shadow-lg border-b border-neutral-200' 
+          ? 'fixed top-16 md:top-20 left-0 right-0 z-40 bg-white shadow-lg border-b border-neutral-200' 
           : 'relative'
       }`}
     >

@@ -181,8 +181,8 @@ const Navbar = () => {
         ? 'bg-primary-50/90 backdrop-blur-md shadow-lg border-b border-primary-100'
         : 'bg-primary-50/70 backdrop-blur-sm border-b border-primary-100/20'
         }`}>
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="h-20 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="h-16 md:h-20 flex items-center justify-between">
 
             {/* Left: Logo */}
             <div className="flex items-center space-x-8">
@@ -353,28 +353,28 @@ const Navbar = () => {
 
         {/* Mobile Search & Filters Bar */}
         <div className="lg:hidden border-t border-gray-200 bg-white/95 backdrop-blur">
-          <div className="max-w-7xl mx-auto px-6 py-4">
-            <div className="flex items-center space-x-3">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center space-x-2">
               <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={handleSearchChange}
                   placeholder="Search..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full pl-9 pr-3 py-2 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
                 />
               </div>
-              <button className="px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl hover:bg-gray-200">
-                <Filter className="w-5 h-5 text-gray-600" />
+              <button className="p-2 bg-gray-100 border border-gray-200 rounded-lg hover:bg-gray-200">
+                <Filter className="w-4 h-4 text-gray-600" />
               </button>
             </div>
-            <div className="flex mt-3 p-1 bg-gray-100 rounded-xl">
+            <div className="flex mt-3 p-1 bg-gray-100 rounded-lg">
               {deliveryModes.map((mode) => (
                 <button
                   key={mode.id}
                   onClick={() => setDeliveryMode(mode.id)}
-                  className={`flex-1 px-3 py-2 text-sm font-bold rounded-lg transition-all ${deliveryMode === mode.id
+                  className={`flex-1 px-2 py-1.5 text-xs font-bold rounded-lg transition-all ${deliveryMode === mode.id
                     ? 'bg-white text-purple-600 shadow-sm'
                     : 'text-gray-500 hover:text-gray-900'
                     }`}

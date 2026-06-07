@@ -422,7 +422,7 @@ const handleRestaurantSelection = async (chatId, session, text, client) => {
     menuItems.forEach((item, index) => {
         const optionNum = index + 1;
         session.menuCache[optionNum] = item;
-        responseList += `*${optionNum}*. ${item.name} - $${item.price.toFixed(2)}\n`;
+        responseList += `*${optionNum}*. ${item.name} - Rs. ${item.price.toFixed(2)}\n`;
     });
 
     responseList += '\n👉 Reply with the *item number* to add it to your cart.\n🛒 Type *checkout* when you are ready to order.\n🔄 Type *reset* to start over.';
@@ -467,7 +467,7 @@ const handleMenuSelection = async (chatId, session, text, client) => {
 
     const subtotal = calculateSubtotal(session.cart);
 
-    sendWhatsAppMessage(chatId, `✅ Added *${quantity}x ${selectedItem.name}* to your cart. Cart Subtotal: $${subtotal.toFixed(2)}\n\nReply with another item number to add more, or type *checkout* to place your order.`);
+    sendWhatsAppMessage(chatId, `✅ Added *${quantity}x ${selectedItem.name}* to your cart. Cart Subtotal: Rs. ${subtotal.toFixed(2)}\n\nReply with another item number to add more, or type *checkout* to place your order.`);
 };
 
 const handleCheckout = async (chatId, session, io, client) => {
@@ -525,7 +525,7 @@ const handleCheckout = async (chatId, session, io, client) => {
             io.to(`restaurant_${session.restaurantId}`).emit('newOrder', order);
         }
 
-        sendWhatsAppMessage(chatId, `🎉 Your order has been placed successfully!\n\n*Order #*: ${order.orderNumber}\n*Total*: $${subtotal.toFixed(2)}\n*Payment*: Cash on Delivery\n\nThank you for choosing OrderIQ! Your cart is now reset.`);
+        sendWhatsAppMessage(chatId, `🎉 Your order has been placed successfully!\n\n*Order #*: ${order.orderNumber}\n*Total*: Rs. ${subtotal.toFixed(2)}\n*Payment*: Cash on Delivery\n\nThank you for choosing OrderIQ! Your cart is now reset.`);
 
         sessions.set(chatId, {
             stage: STAGES.IDLE,
