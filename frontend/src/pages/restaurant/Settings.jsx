@@ -4,7 +4,6 @@ import {
   MapPin,
   Phone,
   Mail,
-  CreditCard,
   LifeBuoy,
   Upload,
   Save,
@@ -53,19 +52,11 @@ const Settings = () => {
     // Toggles
     cashEnabled: true,
     googlePayEnabled: true,
-    cardEnabled: false,
     // Branding
     merchantName: '',
     merchantNote: '',
     // Digital wallet
     googlePayMerchantId: '',
-    jazzCashNumber: '',
-    easyPaisaNumber: '',
-    // Bank account
-    bankAccountTitle: '',
-    bankAccountNumber: '',
-    bankName: '',
-    bankIBAN: '',
   });
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentSaving, setPaymentSaving] = useState(false);
@@ -101,16 +92,9 @@ const Settings = () => {
           setPaymentSettings({
             cashEnabled:         d.cashEnabled        ?? true,
             googlePayEnabled:    d.googlePayEnabled   ?? true,
-            cardEnabled:         d.cardEnabled        ?? false,
             merchantName:        d.merchantName       || '',
             merchantNote:        d.merchantNote       || '',
             googlePayMerchantId: d.googlePayMerchantId || '',
-            jazzCashNumber:      d.jazzCashNumber     || '',
-            easyPaisaNumber:     d.easyPaisaNumber    || '',
-            bankAccountTitle:    d.bankAccountTitle   || '',
-            bankAccountNumber:   d.bankAccountNumber  || '',
-            bankName:            d.bankName           || '',
-            bankIBAN:            d.bankIBAN           || '',
           });
         }
       } catch (err) {
@@ -126,7 +110,7 @@ const Settings = () => {
   const tabs = [
     { id: 'profile',   label: 'Restaurant Profile', icon: <Building size={16} /> },
     { id: 'branding',  label: 'Branding',           icon: <Upload size={16} /> },
-    { id: 'payments',  label: 'Payment & Fees',      icon: <CreditCard size={16} /> },
+    { id: 'payments',  label: 'Payment & Fees',      icon: <Wallet size={16} /> },
     { id: 'support',   label: 'Support',             icon: <LifeBuoy size={16} /> },
   ];
 
@@ -175,7 +159,7 @@ const Settings = () => {
 
   const handleSavePayment = async () => {
     if (!restaurant?.id) return;
-    if (!paymentSettings.cashEnabled && !paymentSettings.googlePayEnabled && !paymentSettings.cardEnabled) {
+    if (!paymentSettings.cashEnabled && !paymentSettings.googlePayEnabled) {
       toast.error('At least one payment method must be enabled.');
       return;
     }
@@ -224,12 +208,10 @@ const Settings = () => {
   // ─── Account config completeness checker ──────────────────────────────────
 
   const gpayConfigured = paymentSettings.googlePayMerchantId && paymentSettings.googlePayMerchantId.trim() !== "";
-  const cardConfigured = paymentSettings.gatewayPublicKey && paymentSettings.gatewayPublicKey.trim() !== "" && paymentSettings.gatewaySecretKey && paymentSettings.gatewaySecretKey.trim() !== "";
 
   // Check if current settings are valid for saving
   const isValid = (!paymentSettings.googlePayEnabled || gpayConfigured) && 
-                  (!paymentSettings.cardEnabled || cardConfigured) &&
-                  (paymentSettings.cashEnabled || paymentSettings.googlePayEnabled || paymentSettings.cardEnabled);
+                  (paymentSettings.cashEnabled || paymentSettings.googlePayEnabled);
 
   const ConfigBadge = ({ ok, label }) => ok ? (
     <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
@@ -513,7 +495,7 @@ const Settings = () => {
                   </p>
 
                   <Field
-                    label="Google Pay Merchant ID (optional)"
+                    label="Google Pay Merchant ID"
                     placeholder="e.g. BCR2DN4T..."
                     value={paymentSettings.googlePayMerchantId}
                     onChange={(v) => set('googlePayMerchantId', v)}
@@ -542,52 +524,10 @@ const Settings = () => {
                   onToggle={(val) => set('cashEnabled', val)}
                 />
 
-                {/* ── 3. Credit / Debit Card ─────────────────────────────────── */}
-                <MethodBlock
-                  icon={<CreditCard size={22} className={paymentSettings.cardEnabled ? 'text-primary' : 'text-neutral-400'} />}
-                  label="Credit / Debit Card"
-                  description="Secure card gateway (e.g. Stripe, Safepay)"
-                  enabled={paymentSettings.cardEnabled}
-                  onToggle={(val) => set('cardEnabled', val)}
-                  configuredLabel="Gateway keys set"
-                  isConfigured={!!cardConfigured}
-                  expandKey="card"
-                >
-                  <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2">
-                    Gateway Configuration
-                  </p>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field
-                      label="Gateway Public Key"
-                      placeholder="pk_test_..."
-                      value={paymentSettings.gatewayPublicKey}
-                      onChange={(v) => set('gatewayPublicKey', v)}
-                    />
-                    <Field
-                      label="Gateway Secret Key"
-                      placeholder="sk_test_..."
-                      value={paymentSettings.gatewaySecretKey}
-                      onChange={(v) => set('gatewaySecretKey', v)}
-                      type="password"
-                    />
-                  </div>
-                  
-                  {!cardConfigured && paymentSettings.cardEnabled && (
-                    <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-xs mt-4">
-                      <AlertCircle size={14} className="mt-0.5 flex-shrink-0" />
-                      <span>Both Public and Secret keys are required to enable Card payments.</span>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-start gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg text-blue-700 text-xs mt-4">
-                    <Info size={14} className="mt-0.5 flex-shrink-0" />
-                    <span>Customers will be able to pay securely using their Visa or Mastercard directly on checkout.</span>
-                  </div>
-                </MethodBlock>
+
 
                 {/* ── Validation alert ────────────────────────────────────────── */}
-                {!paymentSettings.cashEnabled && !paymentSettings.googlePayEnabled && !paymentSettings.cardEnabled && (
+                {!paymentSettings.cashEnabled && !paymentSettings.googlePayEnabled && (
                   <div className="flex items-start gap-2 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
                     <Info size={16} className="mt-0.5 flex-shrink-0" />
                     <span>At least one payment method must be enabled so customers can place orders.</span>

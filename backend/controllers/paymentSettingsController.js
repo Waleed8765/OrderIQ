@@ -10,7 +10,6 @@ const getOrCreateSettings = async (restaurantId) => {
             restaurantId,
             cashEnabled: true,
             googlePayEnabled: true,
-            cardEnabled: false,
         },
         update: {}, // no-op if it already exists
     });
@@ -71,14 +70,11 @@ exports.updatePaymentSettings = async (req, res) => {
             // Method toggles
             cashEnabled,
             googlePayEnabled,
-            cardEnabled,
             // Branding / UX
             merchantName,
             merchantNote,
             // Digital wallet account details
             googlePayMerchantId,
-            gatewayPublicKey,
-            gatewaySecretKey,
         } = req.body;
 
         const updateData = {};
@@ -86,7 +82,6 @@ exports.updatePaymentSettings = async (req, res) => {
         // -- Toggles
         if (cashEnabled !== undefined)      updateData.cashEnabled      = Boolean(cashEnabled);
         if (googlePayEnabled !== undefined) updateData.googlePayEnabled = Boolean(googlePayEnabled);
-        if (cardEnabled !== undefined)      updateData.cardEnabled      = Boolean(cardEnabled);
 
         // -- Branding
         if (merchantName !== undefined)     updateData.merchantName     = merchantName     || null;
@@ -95,32 +90,21 @@ exports.updatePaymentSettings = async (req, res) => {
         // -- Digital wallet account details
         if (googlePayMerchantId !== undefined) updateData.googlePayMerchantId = googlePayMerchantId || null;
 
-        // -- Gateway keys
-        if (gatewayPublicKey !== undefined) updateData.gatewayPublicKey = gatewayPublicKey || null;
-        if (gatewaySecretKey !== undefined) updateData.gatewaySecretKey = gatewaySecretKey || null;
-
         // Ensure at least one payment method stays enabled
         const current = await getOrCreateSettings(restaurantId);
         const merged = { ...current, ...updateData };
-        if (!merged.cashEnabled && !merged.googlePayEnabled && !merged.cardEnabled) {
+        if (!merged.cashEnabled && !merged.googlePayEnabled) {
             return res.status(400).json({
                 success: false,
                 message: 'At least one payment method must remain enabled.',
             });
         }
 
-        // --- NEW: Strict Validation for Enabling Methods ---
+        // --- Strict Validation for Enabling Methods ---
         if (merged.googlePayEnabled && (!merged.googlePayMerchantId || merged.googlePayMerchantId.trim() === "")) {
             return res.status(400).json({
                 success: false,
                 message: 'Google Pay cannot be enabled without a Merchant ID.',
-            });
-        }
-
-        if (merged.cardEnabled && (!merged.gatewayPublicKey || merged.gatewayPublicKey.trim() === "" || !merged.gatewaySecretKey || merged.gatewaySecretKey.trim() === "")) {
-            return res.status(400).json({
-                success: false,
-                message: 'Card payments cannot be enabled without both Public and Secret Gateway Keys.',
             });
         }
 

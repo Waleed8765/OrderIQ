@@ -34,39 +34,12 @@ exports.protect = async (req, res, next) => {
         });
 
         if (!user) {
-            // Lazy sync: user exists in Firebase but not in our DB (likely after a reset)
-            try {
-                const referralCode = `REF-${decodedToken.uid.substring(0, 5).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
-                // Use role from Firebase custom claims if available, otherwise default to CUSTOMER
-                const syncRole = claimsRole || 'CUSTOMER';
-                user = await prisma.user.create({
-                    data: {
-                        firebaseUid: decodedToken.uid,
-                        email: decodedToken.email,
-                        fullName: decodedToken.name || decodedToken.email.split('@')[0],
-                        role: syncRole,
-                        referralCode: referralCode
-                    }
-                });
-                console.log(`[Auth] Lazy-syncing new user: ${decodedToken.email}. Role: ${syncRole}. UID: ${decodedToken.uid}`);
-            } catch (createError) {
-                // Handle Race Condition: User created by parallel request (e.g. register endpoint)
-                if (createError.code === 'P2002') {
-                    console.log(`[Auth] Handled race condition: user already created. UID: ${decodedToken.uid}`);
-                    user = await prisma.user.findUnique({
-                        where: { firebaseUid: decodedToken.uid }
-                    });
-                }
-                
-                if (!user) {
-                    console.error('Auto-sync failed:', createError.message);
-                    return res.status(401).json({ 
-                        success: false, 
-                        message: 'Not authorized, user sync failed',
-                        detail: createError.message
-                    });
-                }
-            }
+            // Don't auto-create users anymore - require explicit registration
+            console.log(`[Auth] User not found in DB (UID: ${decodedToken.uid}, email: ${decodedToken.email}) - not auto-creating`);
+            return res.status(401).json({
+                success: false,
+                message: 'Not authorized, user not found'
+            });
         }
         // Self-heal: keep DB role in sync with Firebase Custom claims if they differ
         if (claimsRole && claimsRole !== user.role && claimsRole !== 'CUSTOMER') {
@@ -120,29 +93,9 @@ exports.optionalProtect = async (req, res, next) => {
             where: { firebaseUid: decodedToken.uid }
         });
 
+        // Don't auto-create users in optionalProtect either
         if (!user) {
-            try {
-                const referralCode = `REF-${decodedToken.uid.substring(0, 5).toUpperCase()}-${Math.floor(Math.random() * 1000)}`;
-                const syncRole = claimsRole || 'CUSTOMER';
-                user = await prisma.user.create({
-                    data: {
-                        firebaseUid: decodedToken.uid,
-                        email: decodedToken.email,
-                        fullName: decodedToken.name || decodedToken.email.split('@')[0],
-                        role: syncRole,
-                        referralCode: referralCode
-                    }
-                });
-            } catch (createError) {
-                if (createError.code === 'P2002') {
-                    user = await prisma.user.findUnique({
-                        where: { firebaseUid: decodedToken.uid }
-                    });
-                }
-                if (!user) {
-                    return next();
-                }
-            }
+            return next();
         }
 
         if (claimsRole && claimsRole !== user.role && claimsRole !== 'CUSTOMER') {

@@ -48,7 +48,6 @@ enum Badge {
 enum PaymentMethod {
   GOOGLE_PAY
   CASH
-  CARD
 }
 
 enum PaymentStatus {
@@ -195,10 +194,10 @@ model Order {
   orderNumber    String      @unique // e.g., "#ORD-12345"
   
   restaurantId   String
-  restaurant     Restaurant  @relation(fields: [restaurantId], references: [id])
+  restaurant     Restaurant  @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   
   customerId     String
-  customer       User        @relation("CustomerOrders", fields: [customerId], references: [id])
+  customer       User        @relation("CustomerOrders", fields: [customerId], references: [id], onDelete: Cascade)
   
   type           OrderType
   table          String?     // For DINEIN
@@ -327,7 +326,6 @@ model RestaurantPaymentSettings {
   // Which payment methods this restaurant accepts
   cashEnabled       Boolean    @default(true)
   googlePayEnabled  Boolean    @default(true)
-  cardEnabled       Boolean    @default(false)
 
   // Optional branding / UX note shown to customer
   merchantName      String?
@@ -336,10 +334,6 @@ model RestaurantPaymentSettings {
   // ── Google Pay account details ──────────────────────────────────────────
   // The merchant ID used in the Google Pay API request
   googlePayMerchantId   String?
-
-  // ── Production Card Gateway (Safepay / Stripe equivalent) ────────────────
-  gatewayPublicKey      String?
-  gatewaySecretKey      String?
 
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt

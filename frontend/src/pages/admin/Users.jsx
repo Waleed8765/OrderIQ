@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Filter, Shield, User, Mail, Calendar, Activity, RefreshCw } from 'lucide-react';
+import { Search, Filter, Shield, User, Mail, Calendar, Activity, RefreshCw, Trash2 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Drawer from '../../components/ui/Drawer';
@@ -56,6 +56,17 @@ const UsersPage = () => {
             toast.error('Could not update user status');
         }
         setShowSuspendModal(false);
+    };
+
+    const handleDeleteUser = async (userId) => {
+        try {
+            await adminService.deleteUser(userId);
+            toast.success('User deleted successfully');
+            setUsers(prev => prev.filter(u => u.id !== userId));
+            setSelectedUser(null);
+        } catch (err) {
+            toast.error('Could not delete user');
+        }
     };
 
     const filteredUsers = useMemo(() => {
@@ -201,7 +212,19 @@ const UsersPage = () => {
                                     </td>
                                     <td className="p-4 text-sm text-gray-500">{user.joined}</td>
                                     <td className="p-4 text-right">
-                                        <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100">View</Button>
+                                        <div className="flex justify-end gap-2">
+                                            <Button size="sm" variant="ghost" className="opacity-0 group-hover:opacity-100">View</Button>
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm('Are you sure you want to delete this user?')) {
+                                                        handleDeleteUser(user.id);
+                                                    }
+                                                }}
+                                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-white rounded shadow-sm opacity-0 group-hover:opacity-100 transition-all border border-gray-200">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -218,12 +241,24 @@ const UsersPage = () => {
                 footer={
                     <div className="flex gap-3">
                         {selectedUser && (
-                            <Button
-                                className={`w-full ${selectedUser.status === 'Active' ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-green-600 hover:bg-green-700 text-white'}`}
-                                onClick={() => handleToggleUserStatus(selectedUser)}
-                            >
-                                {selectedUser.status === 'Active' ? 'Suspend User' : 'Activate User'}
-                            </Button>
+                            <>
+                                <Button
+                                    className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+                                    onClick={() => {
+                                        if (confirm('Are you sure you want to delete this user?')) {
+                                            handleDeleteUser(selectedUser.id);
+                                        }
+                                    }}
+                                >
+                                    Delete User
+                                </Button>
+                                <Button
+                                    className={`flex-1 ${selectedUser.status === 'Active' ? 'bg-red-50 text-red-600 hover:bg-red-100 border border-red-200' : 'bg-green-600 hover:bg-green-700 text-white'}`}
+                                    onClick={() => handleToggleUserStatus(selectedUser)}
+                                >
+                                    {selectedUser.status === 'Active' ? 'Suspend User' : 'Activate User'}
+                                </Button>
+                            </>
                         )}
                     </div>
                 }

@@ -7,6 +7,8 @@ const {
     updateRestaurantStatus,
     toggleRestaurantPromotion,
     updateUserStatus,
+    deleteRestaurant,
+    deleteUser,
     getWhatsAppSettings,
     updateWhatsAppSettings,
     startWhatsAppBot,
@@ -25,9 +27,11 @@ router.get('/dashboard', getDashboardStats);
 router.route('/restaurants').get(getAllRestaurants);
 router.route('/restaurants/:id/status').patch(updateRestaurantStatus);
 router.route('/restaurants/:id/promote').patch(toggleRestaurantPromotion);
+router.route('/restaurants/:id').delete(deleteRestaurant);
 
 router.route('/users').get(getAllUsers);
 router.route('/users/:id/status').patch(updateUserStatus);
+router.route('/users/:id').delete(deleteUser);
 
 router.route('/orders').get(getAllOrders);
 

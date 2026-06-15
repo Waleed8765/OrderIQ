@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Search, Plus, Filter, Star, MapPin, X, Check, Eye, AlertTriangle, RefreshCw } from 'lucide-react';
+import { Search, Plus, Filter, Star, MapPin, X, Check, Eye, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 import Drawer from '../../components/ui/Drawer';
@@ -70,6 +70,17 @@ const Restaurants = () => {
             setSelectedRestaurant(prev => prev ? { ...prev, status: newStatus } : prev);
         } catch (err) {
             toast.error('Could not update restaurant status');
+        }
+    };
+
+    const handleDeleteRestaurant = async (restaurantId) => {
+        try {
+            await adminService.deleteRestaurant(restaurantId);
+            toast.success('Restaurant deleted successfully');
+            setRestaurants(prev => prev.filter(r => r.id !== restaurantId));
+            setSelectedRestaurant(null);
+        } catch (err) {
+            toast.error('Could not delete restaurant');
         }
     };
 
@@ -329,9 +340,21 @@ const Restaurants = () => {
                                     </td>
                                     <td className="p-4 text-sm text-gray-500">{r.lastActive}</td>
                                     <td className="p-4 text-right">
-                                        <button className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-white rounded shadow-sm opacity-0 group-hover:opacity-100 transition-all border border-gray-200">
-                                            <Eye className="w-4 h-4" />
-                                        </button>
+                                        <div className="flex justify-end gap-2">
+                                            <button className="p-1.5 text-gray-400 hover:text-primary-600 hover:bg-white rounded shadow-sm opacity-0 group-hover:opacity-100 transition-all border border-gray-200">
+                                                <Eye className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    if (confirm('Are you sure you want to delete this restaurant?')) {
+                                                        handleDeleteRestaurant(r.id);
+                                                    }
+                                                }}
+                                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-white rounded shadow-sm opacity-0 group-hover:opacity-100 transition-all border border-gray-200">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -347,15 +370,24 @@ const Restaurants = () => {
                 title={selectedRestaurant?.name || 'Details'}
                 footer={
                     <div className="flex gap-3">
+                        <Button 
+                            className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200" 
+                            onClick={() => {
+                                if (confirm('Are you sure you want to delete this restaurant?')) {
+                                    handleDeleteRestaurant(selectedRestaurant.id);
+                                }
+                            }}
+                        >
+                            Delete Restaurant
+                        </Button>
                         {selectedRestaurant?.status === 'Pending' ? (
                             <>
                                 <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleStatusChange(selectedRestaurant.id, 'Active')}>Approve Application</Button>
-                                <Button className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200" onClick={() => handleStatusChange(selectedRestaurant.id, 'Suspended')}>Reject</Button>
                             </>
                         ) : selectedRestaurant?.status === 'Active' ? (
-                            <Button className="w-full bg-red-50 text-red-600 hover:bg-red-100 border border-red-200" onClick={() => handleStatusChange(selectedRestaurant.id, 'Suspended')}>Suspend Restaurant</Button>
+                            <Button className="flex-1 bg-red-50 text-red-600 hover:bg-red-100 border border-red-200" onClick={() => handleStatusChange(selectedRestaurant.id, 'Suspended')}>Suspend Restaurant</Button>
                         ) : (
-                            <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => handleStatusChange(selectedRestaurant.id, 'Active')}>Reactivate Restaurant</Button>
+                            <Button className="flex-1 bg-green-600 hover:bg-green-700" onClick={() => handleStatusChange(selectedRestaurant.id, 'Active')}>Reactivate Restaurant</Button>
                         )}
                     </div>
                 }

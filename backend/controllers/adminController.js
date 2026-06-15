@@ -1,4 +1,5 @@
 const prisma = require('../config/db');
+const { admin, isInitialized } = require('../config/firebase');
 const { startWhatsApp, stopWhatsApp, getCurrentWhatsAppStatus, resetWhatsAppSession } = require('../services/whatsappService');
 
 // Helper to get or create app settings
@@ -226,5 +227,117 @@ exports.updateUserStatus = async (req, res) => {
         console.error(error);
         res.status(500).json({ success: false, message: 'Server error updating user status' });
     }
+};
+
+exports.deleteRestaurant = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // First, delete related records explicitly to avoid foreign key issues
+    await prisma.orderItem.deleteMany({
+      where: {
+        order: {
+          restaurantId: id
+        }
+      }
+    });
+    await prisma.order.deleteMany({
+      where: { restaurantId: id }
+    });
+    await prisma.menuItem.deleteMany({
+      where: { restaurantId: id }
+    });
+    await prisma.category.deleteMany({
+      where: { restaurantId: id }
+    });
+    await prisma.teamMember.deleteMany({
+      where: { restaurantId: id }
+    });
+    await prisma.favorite.deleteMany({
+      where: { restaurantId: id }
+    });
+    await prisma.review.deleteMany({
+      where: { restaurantId: id }
+    });
+    await prisma.table.deleteMany({
+      where: { restaurantId: id }
+    });
+    await prisma.restaurantPaymentSettings.deleteMany({
+      where: { restaurantId: id }
+    });
+    
+    // Then delete the restaurant
+    await prisma.restaurant.delete({
+      where: { id }
+    });
+    
+    res.status(200).json({ success: true, message: 'Restaurant deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting restaurant:', error);
+    res.status(500).json({ success: false, message: 'Server error deleting restaurant', error: error.message });
+  }
+};
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Get the user first to get their firebaseUid
+    const userToDelete = await prisma.user.findUnique({
+      where: { id }
+    });
+    
+    if (!userToDelete) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // First, delete related records explicitly
+    await prisma.orderItem.deleteMany({
+      where: {
+        order: {
+          customerId: id
+        }
+      }
+    });
+    await prisma.order.deleteMany({
+      where: { customerId: id }
+    });
+    await prisma.address.deleteMany({
+      where: { userId: id }
+    });
+    await prisma.teamMember.deleteMany({
+      where: { userId: id }
+    });
+    await prisma.reward.deleteMany({
+      where: { userId: id }
+    });
+    await prisma.favorite.deleteMany({
+      where: { userId: id }
+    });
+    await prisma.review.deleteMany({
+      where: { userId: id }
+    });
+    
+    // Then delete the user from our DB
+    await prisma.user.delete({
+      where: { id }
+    });
+    
+    // Also delete the user from Firebase Auth if Firebase is initialized
+    if (isInitialized) {
+      try {
+        await admin.auth().deleteUser(userToDelete.firebaseUid);
+        console.log(`[Admin] Deleted user from Firebase Auth: ${userToDelete.email}`);
+      } catch (firebaseError) {
+        console.error('Error deleting user from Firebase Auth:', firebaseError);
+        // Don't fail the whole request if Firebase delete fails, just log it
+      }
+    }
+    
+    res.status(200).json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ success: false, message: 'Server error deleting user', error: error.message });
+  }
 };
 

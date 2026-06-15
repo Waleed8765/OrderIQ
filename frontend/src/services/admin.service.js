@@ -23,6 +23,11 @@ export const adminService = {
         return response.data;
     },
 
+    deleteRestaurant: async (restaurantId) => {
+        const response = await api.delete(`/admin/restaurants/${restaurantId}`);
+        return response.data;
+    },
+
     // Users
     getAllUsers: async (params = {}) => {
         const response = await api.get('/admin/users', { params });
@@ -31,6 +36,11 @@ export const adminService = {
 
     updateUserStatus: async (userId, isActive) => {
         const response = await api.patch(`/admin/users/${userId}/status`, { isActive });
+        return response.data;
+    },
+
+    deleteUser: async (userId) => {
+        const response = await api.delete(`/admin/users/${userId}`);
         return response.data;
     },
 

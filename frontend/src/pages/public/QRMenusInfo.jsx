@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { QrCode, Smartphone, CheckCircle, ChevronRight, Zap, UtensilsCrossed, CreditCard } from 'lucide-react';
+import { QrCode, Smartphone, CheckCircle, ChevronRight, Zap, UtensilsCrossed, Wallet } from 'lucide-react';
 import PublicPageLayout from '../../layouts/PublicPageLayout';
 
 const steps = [
   { icon: QrCode, title: 'Scan the QR Code', desc: 'Use your phone camera to scan the QR code on your table — no app download required.', color: 'from-primary-500 to-accent-500' },
   { icon: UtensilsCrossed, title: 'Browse the Menu', desc: 'View the full digital menu with photos, descriptions, allergens, and live availability.', color: 'from-secondary-500 to-primary-500' },
   { icon: Smartphone, title: 'Place Your Order', desc: 'Add items to your cart and place your order directly from your phone.', color: 'from-accent-500 to-secondary-500' },
-  { icon: CreditCard, title: 'Pay Your Way', desc: 'Pay online instantly via card, or choose pay-at-counter — fully flexible.', color: 'from-primary-600 to-secondary-600' },
+  { icon: Wallet, title: 'Pay Your Way', desc: 'Pay online instantly via Google Pay, or choose pay-at-counter — fully flexible.', color: 'from-primary-600 to-secondary-600' },
 ];
 
 const benefits = [

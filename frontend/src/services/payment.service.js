@@ -15,15 +15,6 @@ export const paymentService = {
     },
 
     /**
-     * Process a Secure Card payment in TEST mode.
-     * @param {object} payload - { paymentToken, orderPayload }
-     */
-    processCardPayment: async (payload) => {
-        const response = await api.post('/payments/card/process', payload);
-        return response.data;
-    },
-
-    /**
      * Fetch payment status for a given order.
      * @param {string} orderId
      */
@@ -34,7 +25,7 @@ export const paymentService = {
 
     /**
      * Get the payment settings for a specific restaurant (public).
-     * Returns which methods (cash, gpay, card) are enabled.
+     * Returns which methods (cash, gpay) are enabled.
      * @param {string} restaurantId
      */
     getRestaurantPaymentSettings: async (restaurantId) => {
@@ -45,7 +36,7 @@ export const paymentService = {
     /**
      * Update payment settings for a restaurant (owner only).
      * @param {string} restaurantId
-     * @param {object} data - { cashEnabled, googlePayEnabled, cardEnabled, merchantName, merchantNote }
+     * @param {object} data - { cashEnabled, googlePayEnabled, merchantName, merchantNote }
      */
     updatePaymentSettings: async (restaurantId, data) => {
         const response = await api.put(`/restaurants/${restaurantId}/payment-settings`, data);

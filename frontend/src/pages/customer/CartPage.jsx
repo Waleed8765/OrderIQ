@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
     ArrowLeft, Trash2, ChevronRight, ShoppingBag,
-    MapPin, UtensilsCrossed, Wallet, CheckCircle2, LogIn, CreditCard
+    MapPin, UtensilsCrossed, Wallet, CheckCircle2, LogIn
 } from 'lucide-react';
 import { useCart } from '../../features/customer/CartContext';
 import { useAuth } from '../../features/auth/AuthContext';
 import Button from '../../components/ui/Button';
 import GooglePayButton from '../../components/customer/GooglePayButton';
-import MockGatewayModal from '../../components/customer/MockGatewayModal';
 import { paymentService } from '../../services/payment.service';
 import { orderService } from '../../services/order.service';
 import { userService } from '../../services/user.service';
@@ -50,34 +49,28 @@ const CartPage = () => {
 
     const cashEnabled   = livePaySettings ? livePaySettings.cashEnabled      : true;
     const gpayEnabled   = livePaySettings ? livePaySettings.googlePayEnabled : true;
-    const cardEnabled   = livePaySettings?.cardEnabled || false;
     const merchantNote    = livePaySettings?.merchantNote || null;
 
     // Payout account details
     const googlePayMerchantId = livePaySettings?.googlePayMerchantId || null;
-    const gatewayPublicKey = livePaySettings?.gatewayPublicKey || null;
 
     // Determine if digital wallets are actually configured to receive money
     const gpayConfigured = !!(googlePayMerchantId && googlePayMerchantId.trim() !== "");
-    const cardConfigured = !!(gatewayPublicKey && gatewayPublicKey.trim() !== "" && livePaySettings?.gatewaySecretKey && livePaySettings.gatewaySecretKey.trim() !== "");
     
     // Only available if both enabled AND configured
     const gpayAvailable = gpayEnabled && gpayConfigured;
-    const cardAvailable = cardEnabled && cardConfigured;
     const cashAvailable = cashEnabled; // Cash doesn't strictly need a bank account
 
-    // Default to card if available, else gpay, else cash
-    const defaultMethod = cardAvailable ? 'card' : gpayAvailable ? 'gpay' : cashAvailable ? 'cash' : 'none';
+    // Default to gpay if available, else cash
+    const defaultMethod = gpayAvailable ? 'gpay' : cashAvailable ? 'cash' : 'none';
     const [selectedMethod, setSelectedMethod] = useState(defaultMethod);
 
     // Sync selected method if availability changes after fetch
     useEffect(() => {
         if (!isFetchingPay) {
-            if (cardAvailable && selectedMethod === 'none') setSelectedMethod('card');
-            else if (!cardAvailable && gpayAvailable && selectedMethod === 'card') setSelectedMethod('gpay');
-            else if (!gpayAvailable && cashAvailable && selectedMethod === 'gpay') setSelectedMethod('cash');
+            if (!gpayAvailable && cashAvailable && selectedMethod === 'gpay') setSelectedMethod('cash');
         }
-    }, [cardAvailable, gpayAvailable, cashAvailable, isFetchingPay]);
+    }, [gpayAvailable, cashAvailable, isFetchingPay]);
 
 
     // API Data
@@ -88,7 +81,6 @@ const CartPage = () => {
     // Modal state
     const [isLoginOpen, setIsLoginOpen] = useState(false);
     const [isForgotOpen, setIsForgotOpen] = useState(false);
-    const [isCardModalOpen, setIsCardModalOpen] = useState(false);
 
     const handleOpenLogin = () => {
         setIsForgotOpen(false);
@@ -249,35 +241,7 @@ const CartPage = () => {
         }
     };
 
-    // ─── Card checkout handlers ───────────────────────────────────────────────
 
-    const handleCardCheckout = () => {
-        if (!validateOrder()) return;
-        setIsCardModalOpen(true);
-    };
-
-    const handleCardSuccess = async (paymentToken) => {
-        setIsCardModalOpen(false);
-        setIsProcessing(true);
-        try {
-            const orderPayload = buildOrderPayload();
-            const response = await paymentService.processCardPayment({
-                paymentToken,
-                orderPayload
-            });
-
-            toast.success('🎉 Card Payment Successful! Order placed.');
-            clearCart();
-            const newOrderId = response.data?.id;
-            navigate(`/customer/orders/${newOrderId}`);
-        } catch (error) {
-            console.error('Card checkout failed:', error);
-            toast.error(error.response?.data?.message || 'Card payment failed. Please try again.');
-            setPaymentError('Card payment failed. Please try again.');
-        } finally {
-            setIsProcessing(false);
-        }
-    };
 
     // ─── Login required gate ───────────────────────────────────────────────────
 
@@ -621,31 +585,7 @@ const CartPage = () => {
                                 </button>
                             )}
 
-                            {/* Credit / Debit Card Option — only if restaurant enabled it AND configured it */}
-                            {cardAvailable && (
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedMethod('card')}
-                                    className={`w-full p-4 rounded-xl border-2 transition-all flex items-center justify-between ${selectedMethod === 'card'
-                                        ? 'border-primary-500 bg-primary-50'
-                                        : 'border-neutral-200 hover:border-primary-300 bg-white'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                            <CreditCard className="w-5 h-5 text-blue-600" />
-                                        </div>
-                                        <div className="text-left">
-                                            <p className="font-semibold text-sm text-neutral-900">Credit / Debit Card</p>
-                                            <p className="text-xs text-neutral-500">Pay via secure gateway</p>
-                                        </div>
-                                    </div>
-                                    {selectedMethod === 'card'
-                                        ? <CheckCircle2 className="w-5 h-5 text-primary-600" />
-                                        : <ChevronRight className="w-5 h-5 text-neutral-400" />
-                                    }
-                                </button>
-                            )}
+
                         </div>
                     </div>
 
@@ -699,20 +639,6 @@ const CartPage = () => {
                                 Place Order • PKR {grandTotal}
                             </Button>
                         </div>
-                    ) : selectedMethod === 'card' && cardAvailable ? (
-                        <div className="space-y-3">
-                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                                <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">💳 Secure Card Payment</p>
-                                <p className="text-sm text-neutral-600">You will be redirected to our secure mock gateway to complete your payment.</p>
-                            </div>
-                            <Button
-                                onClick={handleCardCheckout}
-                                className="w-full py-4 text-lg shadow-xl shadow-primary-500/20"
-                                isLoading={isProcessing}
-                            >
-                                Pay with Card • PKR {grandTotal}
-                            </Button>
-                        </div>
                     ) : null}
                 </div>
             </div>
@@ -726,13 +652,6 @@ const CartPage = () => {
                 isOpen={isForgotOpen}
                 onClose={() => setIsForgotOpen(false)}
                 onSwitchToLogin={handleOpenLogin}
-            />
-            <MockGatewayModal
-                isOpen={isCardModalOpen}
-                onClose={() => setIsCardModalOpen(false)}
-                amount={grandTotal}
-                restaurantName={restaurant?.name}
-                onSuccess={handleCardSuccess}
             />
         </div>
     );
