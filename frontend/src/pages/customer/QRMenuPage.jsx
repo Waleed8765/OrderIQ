@@ -5,6 +5,8 @@ import DishCard from '../../components/customer/DishCard';
 import { restaurantService } from '../../services/restaurant.service';
 import { menuService } from '../../services/menu.service';
 import { useCart } from '../../features/customer/CartContext';
+import { useAuth } from '../../features/auth/AuthContext';
+import toast from 'react-hot-toast';
 
 const QRMenuPage = () => {
     const { restaurantId } = useParams();
@@ -17,6 +19,7 @@ const QRMenuPage = () => {
     const [activeCategory, setActiveCategory] = useState('');
     const [loading, setLoading] = useState(true);
     const { cartItems, cartTotal, updateQuantity, removeFromCart, setDineIn } = useCart();
+    const { isAuthenticated } = useAuth();
 
     useEffect(() => {
         // Set dine-in mode with table info when page loads
@@ -197,7 +200,16 @@ const QRMenuPage = () => {
                 <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-neutral-200 shadow-2xl px-4 py-3">
                     <div className="max-w-4xl mx-auto">
                         <button
-                            onClick={() => navigate('/customer/checkout')}
+                            onClick={() => {
+                                if (!isAuthenticated) {
+                                    toast.error('Please log in first to proceed to checkout.', { icon: '🔒', duration: 1000 });
+                                    setTimeout(() => {
+                                        window.dispatchEvent(new CustomEvent('open-login'));
+                                    }, 1000);
+                                    return;
+                                }
+                                navigate('/customer/checkout');
+                            }}
                             className="w-full flex items-center justify-between bg-primary-600 text-white rounded-xl px-6 py-4 hover:bg-primary-700 transition shadow-lg"
                         >
                             <div className="flex items-center gap-3">
