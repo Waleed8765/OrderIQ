@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Loader, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { loginUser, logoutUser, getCurrentUserProfile } from '../../services/auth.service';
 
 const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onForgotPassword }) => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [rememberMe, setRememberMe] = useState(false);
@@ -39,7 +40,11 @@ const LoginModal = ({ isOpen, onClose, onSwitchToSignup, onForgotPassword }) => 
             } else if (dbRole === 'RESTAURANT_OWNER') {
                 navigate('/restaurant/dashboard');
             } else if (dbRole === 'CUSTOMER') {
-                navigate('/');
+                // If customer is on QR menu page or restaurant page, stay there; otherwise go home
+                if (!location.pathname.startsWith('/menu/') && !location.pathname.startsWith('/customer/restaurant/')) {
+                    navigate('/');
+                }
+                // Else: do nothing, stay on current page!
             } else {
                 // Unknown role - log and redirect to home
                 console.warn('[LoginModal] Unknown role:', dbRole, '— redirecting to home');
