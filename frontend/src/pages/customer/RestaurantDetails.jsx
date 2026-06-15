@@ -252,8 +252,10 @@ const RestaurantDetails = () => {
                                     ) : (
                                       <button
                                           onClick={() => {
-                                              toast('Please log in first to place an order.', { icon: '🔒' });
-                                              navigate('/');
+                                              toast('Please log in first to place an order.', { icon: '🔒', duration: 1000 });
+                                              setTimeout(() => {
+                                                  window.dispatchEvent(new CustomEvent('open-login'));
+                                              }, 1000);
                                           }}
                                           className="w-full mt-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg transition"
                                       >

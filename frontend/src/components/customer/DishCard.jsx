@@ -30,7 +30,10 @@ const DishCard = ({ dish, restaurantName, restaurantId, isClosed }) => {
 
   const handleAdd = () => {
     if (!isAuthenticated) {
-      toast.error('Please log in first to add items to your cart.', { icon: '🔒' });
+      toast.error('Please log in first to add items to your cart.', { icon: '🔒', duration: 1000 });
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('open-login'));
+      }, 1000);
       return;
     }
     addToCart({ ...dish, restaurantId }, { id: restaurantId, name: restaurantName });

@@ -54,7 +54,10 @@ export const FavoritesProvider = ({ children }) => {
     // Optimistic toggle
     const toggleFavorite = useCallback(async (restaurantId) => {
         if (!isAuthenticated) {
-            toast.error('Please log in to save favorites');
+            toast.error('Please log in to save favorites', { duration: 1000 });
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('open-login'));
+            }, 1000);
             return;
         }
 
