@@ -18,8 +18,10 @@ const QRMenuPage = () => {
     const [menu, setMenu] = useState({ categories: [], items: [] });
     const [activeCategory, setActiveCategory] = useState('');
     const [loading, setLoading] = useState(true);
-    const { cartItems, cartTotal, updateQuantity, removeFromCart, setDineIn } = useCart();
+    const { cartItems, cartTotal, updateQuantity, removeFromCart, setDineIn, addToCart } = useCart();
     const { isAuthenticated } = useAuth();
+
+    console.log('QRMenuPage: cartItems.length =', cartItems.length);
 
     useEffect(() => {
         // Set dine-in mode with table info when page loads
@@ -100,7 +102,7 @@ const QRMenuPage = () => {
     }
 
     return (
-        <div className="bg-white min-h-screen pb-24">
+        <div className="bg-white min-h-screen pb-28">
             {/* Dine-In Banner */}
             {tableLabel && (
                 <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-3 px-4 text-center sticky top-0 z-30 shadow-lg">
@@ -197,7 +199,7 @@ const QRMenuPage = () => {
 
             {/* Floating Cart Bar */}
             {cartItems.length > 0 && (
-                <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-neutral-200 shadow-2xl px-4 py-3">
+                <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 shadow-2xl px-4 py-4">
                     <div className="max-w-4xl mx-auto">
                         <button
                             onClick={() => {

@@ -89,7 +89,7 @@ const RestaurantDetails = () => {
     if (!restaurant) return <div className="min-h-screen flex items-center justify-center">Restaurant not found.</div>;
 
     return (
-        <div className="bg-white min-h-screen">
+        <div className="bg-white min-h-screen pb-28">
             {/* Banner Image */}
             <div className="relative h-64 md:h-80 w-full">
                 <img
@@ -274,6 +274,35 @@ const RestaurantDetails = () => {
                 </div>
 
             </div>
+
+            {/* Mobile Floating Cart Bar */}
+            {cartItems.length > 0 && (
+                <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 shadow-2xl px-4 py-4">
+                    <div className="max-w-4xl mx-auto">
+                        <button
+                            onClick={() => {
+                                if (!isAuthenticated) {
+                                    toast.error('Please log in first to proceed to checkout.', { icon: '🔒', duration: 1000 });
+                                    setTimeout(() => {
+                                        window.dispatchEvent(new CustomEvent('open-login'));
+                                    }, 1000);
+                                    return;
+                                }
+                                navigate('/customer/checkout');
+                            }}
+                            className="w-full flex items-center justify-between bg-primary-600 text-white rounded-xl px-6 py-4 hover:bg-primary-700 transition shadow-lg"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 rounded-lg px-2.5 py-1 font-bold text-sm">
+                                    {cartItems.reduce((acc, i) => acc + i.quantity, 0)}
+                                </div>
+                                <span className="font-semibold">View Cart</span>
+                            </div>
+                            <span className="font-bold text-lg">PKR {cartTotal.toFixed(2)}</span>
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
 
     );
